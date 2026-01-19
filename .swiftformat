@@ -1,0 +1,45 @@
+# file options
+
+--exclude Carthage,Pods,Tests/Mocks/*.generated.swift
+
+# format options
+
+--allman false
+--commas always
+--else-position same-line
+--header ignore
+--ifdef indent
+--indent 2
+--import-grouping testable-bottom
+--linebreaks lf
+--max-width 200
+--operator-func spaced
+--patternlet hoist
+--ranges spaced
+--self remove
+--semicolons inline
+--strip-unused-args closure-only
+--swiftversion 6.0
+--trim-whitespace always
+--type-blank-lines remove
+--wrap-arguments preserve
+--wrap-collections preserve
+--wrap-conditions preserve
+
+# rules
+
+--enable isEmpty
+--enable blankLinesBetweenImports
+--enable blockComments
+--enable environmentEntry
+--enable noGuardInTests
+--enable preferFinalClasses
+--enable privateStateVariables
+--enable redundantMemberwiseInit
+--enable redundantAsync
+--enable redundantProperty
+--enable redundantThrows
+--enable noForceTryInTests
+--enable wrapMultilineFunctionChains
+--enable wrapMultilineStatementBraces
+--enable noForceUnwrapInTests
