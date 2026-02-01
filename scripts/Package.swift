@@ -5,5 +5,5 @@ import PackageDescription
 let package = Package(
   name: "scripts",
   products: [],
-  targets: []
+  targets: [],
 )

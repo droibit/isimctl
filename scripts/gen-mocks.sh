@@ -12,15 +12,15 @@ run_mockolo() {
   local module="$(echo "${1}" | sed -e 's|/||g')"
   mint run uber/mockolo mockolo \
     -s "./Sources/${path}" \
-    -d ./Tests/Mocks/${module}Mocks.generated.swift \
+    -d ./Tests/${module}Mocks/${module}Mocks.generated.swift \
     -i "${module}" \
     --enable-args-history
 }
 
 END_DATE=$(date +"%s")
 
-# run_mockolo "Core/Repository"
-# run_mockolo "Core/Source"
+run_mockolo "SimctlKit"
+run_mockolo "IsimctlUI"
 
 DIFF=$(($END_DATE - $START_DATE))
 echo "Mockolo took $(($DIFF / 60)) minutes and $(($DIFF % 60)) seconds to complete."

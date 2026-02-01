@@ -1,11 +1,18 @@
 // swift-tools-version: 6.0
 import PackageDescription
 
+private extension PackageDescription.Target.Dependency {
+  // static let factory: Self = .product(name: "Factory", package: "Factory")
+  static let argumentParser: Self = .product(name: "ArgumentParser", package: "swift-argument-parser")
+  static let subprocess: Self = .product(name: "Subprocess", package: "swift-subprocess")
+  static let noora: Self = .product(name: "Noora", package: "Noora")
+}
+
 let package = Package(
   name: "isimctl",
   platforms: [.macOS(.v15)],
   products: [
-    .executable(name: "isimctl", targets: ["CLI"]),
+    .executable(name: "isimctl", targets: ["Isimctl"]),
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-argument-parser", exact: "1.7.0"),
@@ -13,50 +20,94 @@ let package = Package(
     .package(url: "https://github.com/tuist/Noora", exact: "0.53.0"),
   ],
   targets: [
-    // Targets are the basic building blocks of a package, defining a module or a test suite.
-    // Targets can depend on other targets in this package and products from dependencies.
     .executableTarget(
-      name: "CLI",
+      name: "Isimctl",
       dependencies: [
-        .product(name: "ArgumentParser", package: "swift-argument-parser"),
-        .product(name: "Subprocess", package: "swift-subprocess"),
-        .product(name: "Noora", package: "Noora"),
-        "Core",
-      ]
+        .argumentParser,
+        .noora,
+        "IsimctlUI",
+      ],
     ),
     .target(
-      name: "Core",
+      name: "IsimctlUI",
       dependencies: [
-        .product(name: "Subprocess", package: "swift-subprocess"),
-        .product(name: "Noora", package: "Noora"),
-      ]
+        .noora,
+        "SimctlKit",
+      ],
+    ),
+    .target(
+      name: "SimctlKit",
+      dependencies: [
+        .subprocess,
+      ],
+    ),
+
+    // MARK: - Tests
+
+    .testTarget(
+      name: "IsimctlUITests",
+      dependencies: [
+        "IsimctlUI",
+        "IsimctlUIMocks",
+        "SimctlKit",
+        "SimctlKitMocks",
+      ],
     ),
     .testTarget(
-      name: "CoreTests",
+      name: "SimctlKitTests",
       dependencies: [
-        "Core",
-      ]
+        "SimctlKit",
+        "SimctlKitMocks",
+      ],
+    ),
+    .testTarget(
+      name: "SimctlKitIntegrationTests",
+      dependencies: [
+        "SimctlKit",
+      ],
+    ),
+
+    // MARK: - Mocks
+
+    .target(
+      name: "IsimctlUIMocks",
+      dependencies: [
+        "IsimctlUI",
+      ],
+      path: "./Tests/IsimctlUIMocks",
+      exclude: [".gitkeep"],
+    ),
+
+    .target(
+      name: "SimctlKitMocks",
+      dependencies: [
+        .subprocess,
+        "SimctlKit",
+      ],
+      path: "./Tests/SimctlKitMocks",
+      exclude: [".gitkeep"],
     ),
   ],
-  swiftLanguageModes: [.v6]
+  swiftLanguageModes: [.v6],
 )
 
-// ref. https://github.com/treastrain/swift-upcomingfeatureflags-cheatsheet
+/// ref. https://github.com/treastrain/swift-upcomingfeatureflags-cheatsheet
 extension SwiftSetting {
   static let existentialAny: Self = .enableUpcomingFeature("ExistentialAny") // SE-0335, Swift 5.6,  SwiftPM 5.8+
   static let internalImportsByDefault: Self = .enableUpcomingFeature("InternalImportsByDefault") // SE-0409, Swift 6.0,  SwiftPM 6.0+
   static let memberImportVisibility: Self = .enableUpcomingFeature("MemberImportVisibility") // SE-0444, Swift 6.1,  SwiftPM 6.1+
+  static let strictConcurrency: Self = .enableUpcomingFeature("StrictConcurrency")
 }
 
 for target in package.targets {
-  guard target.name != "Mocks" else {
+  guard !target.name.hasSuffix("Mocks") else {
     continue
   }
 
   target.swiftSettings = [
-    .enableUpcomingFeature("StrictConcurrency"),
     .existentialAny,
     .internalImportsByDefault,
     .memberImportVisibility,
+    .strictConcurrency,
   ]
 }

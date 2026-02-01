@@ -1,6 +1,6 @@
 # file options
 
---exclude Carthage,Pods,Tests/Mocks/*.generated.swift
+--exclude Carthage,Pods,Tests/*Mocks/*.generated.swift
 
 # format options
 
@@ -19,7 +19,7 @@
 --self remove
 --semicolons inline
 --strip-unused-args closure-only
---swiftversion 6.0
+--swiftversion 6.2
 --trim-whitespace always
 --type-blank-lines remove
 --wrap-arguments preserve
