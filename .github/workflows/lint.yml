@@ -1,0 +1,34 @@
+name: Code Quality - Lint & Format
+
+# Trigger on changes to critical files that affect code style
+on:
+  push:
+    paths:
+      - '.github/workflows/lint.yml'
+      - '.swiftformat'
+      - '.swiftlint.yml'
+      - '**.swift'
+      - 'Mintfile'
+  pull_request:
+    paths:
+      - '.github/workflows/lint.yml'
+      - '.swiftformat'
+      - '.swiftlint.yml'
+      - '**.swift'
+      - 'Mintfile'
+
+jobs:
+  lint:
+    name: Code Quality Checks
+    description: Run SwiftFormat and SwiftLint verifications
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: irgaly/setup-mint@v1
+
+      - name: Verify code formatting with SwiftFormat
+        run: ./scripts/swiftformat.sh --all
+
+      - name: Verify code style with SwiftLint
+        run: ./scripts/swiftlint.sh --all
