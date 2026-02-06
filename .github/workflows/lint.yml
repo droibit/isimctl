@@ -20,7 +20,6 @@ on:
 jobs:
   lint:
     name: Code Quality Checks
-    description: Run SwiftFormat and SwiftLint verifications
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v5

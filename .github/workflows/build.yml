@@ -7,7 +7,6 @@ on:
 jobs:
   build:
     name: Build and Test
-    description: Build and test across multiple Swift/Xcode versions
     strategy:
       matrix:
         include:
