@@ -1,7 +1,7 @@
 import Testing
 @testable import SimctlKit
 
-struct SimctlIntegrationTest {
+struct SimctlIntegrationTests {
   private let simctl = Simctl()
   private let xcrun = Xcrun()
 

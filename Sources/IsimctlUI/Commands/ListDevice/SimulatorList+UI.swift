@@ -93,11 +93,11 @@ extension SimulatorList {
       .flatMap { runtime, devices in
         devices.map { DeviceWithRuntime(device: $0, runtime: runtime) }
       }
-      .sorted {
-        if $0.runtime != $1.runtime {
-          return $0.runtime < $1.runtime
+      .sorted { lhs, rhs in
+        if lhs.runtime != rhs.runtime {
+          return lhs.runtime < rhs.runtime
         }
-        return $0.device.name < $1.device.name
+        return lhs.device.name < rhs.device.name
       }
   }
 }
