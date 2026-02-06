@@ -25,6 +25,154 @@ The name `isimctl` is derived from "interactive simctl".
     - **`swift-subprocess`**: Execute and manage external processes (specifically `xcrun`) using the [`swift-subprocess`](https://github.com/swiftlang/swift-subprocess) package.
     - **`Noora`**: Construct all interactive terminal UI elements, such as lists and prompts, with the [`Noora`](https://github.com/tuist/Noora) package.
 
+### Project Structure
+
+The project follows a layered architecture with three main source targets and corresponding test infrastructure:
+
+```
+Isimctl (CLI Layer)
+    ↓ depends on
+IsimctlUI (UI Layer)
+    ↓ depends on
+SimctlKit (Core Layer)
+```
+
+#### Sources/ Directory Targets
+
+**1. Isimctl** (Executable Target)
+
+- **Responsibility**: CLI entry point with ArgumentParser integration. Minimal logic—delegates to IsimctlUI for implementation.
+- **Location**: `Sources/Isimctl/`
+- **When to use**: When adding command-line argument definitions or new subcommands.
+- **Structure**:
+  - `Isimctl.swift` - Main entry point with `@main`
+  - `Commands/` - Subcommand definitions (e.g., `ListCommand.swift`)
+
+**Decision rule**: Isimctl should only parse arguments and delegate to IsimctlUI. No business logic or UI rendering here.
+
+**2. IsimctlUI** (Library Target)
+
+- **Responsibility**: Interactive terminal UI components using Noora and command business logic.
+- **Location**: `Sources/IsimctlUI/`
+- **When to use**:
+  - When adding terminal UI components (e.g. tables, prompts, messages)
+  - When implementing command orchestration logic
+  - When creating UI-specific data models or extensions
+- **Structure**:
+  - `Commands/<Feature>/` - Feature-based organization (e.g., `ListDevice/` contains all list-related UI components)
+  - `Noora/` - Shared UI components and Noora wrapper
+  - UI extensions use `+UI.swift` suffix (e.g., `SimulatorList+UI.swift`)
+
+**Decision rule**: If code involves user interaction or Noora components, it belongs in IsimctlUI.
+
+**3. SimctlKit** (Library Target)
+
+- **Responsibility**: Core simctl wrapper, subprocess execution, and data models. Platform-agnostic and reusable.
+- **Location**: `Sources/SimctlKit/`
+- **When to use**:
+  - When adding new simctl command wrappers
+  - When adding data models for simctl JSON responses
+  - When modifying subprocess execution logic
+- **Structure**:
+  - `Simctl.swift` - Main `Simctlable` protocol and implementation
+  - `Xcrun/` - Subprocess execution layer (internal)
+
+**Decision rule**: If code wraps `xcrun simctl` or defines platform-agnostic models, it belongs in SimctlKit. No UI dependencies allowed.
+
+#### Tests/ Directory Targets
+
+**1. IsimctlUITests** and **SimctlKitTests** (Unit Test Targets)
+
+- **Responsibility**: Unit tests using Mockolo-generated mocks for isolated component testing.
+- **Location**: `Tests/IsimctlUITests/` and `Tests/SimctlKitTests/`
+- **File placement**: Mirror the source structure exactly:
+  - Pattern: `Sources/<Target>/<Path>/<File>.swift` → `Tests/<Target>Tests/<Path>/<File>Tests.swift`
+  - Example: `DeviceTable.swift` in `Sources/IsimctlUI/Commands/ListDevice/` → `DeviceTableTests.swift` in `Tests/IsimctlUITests/Commands/ListDevice/`
+
+**Decision rule**: Use unit tests for business logic and UI components with mocked dependencies.
+
+**2. SimctlKitIntegrationTests** (Integration Test Target)
+
+- **Responsibility**: Integration tests executing real `xcrun simctl` commands without mocks.
+- **Location**: `Tests/SimctlKitIntegrationTests/`
+- **When to use**: When verifying actual simctl interaction and JSON parsing.
+
+**Decision rule**: Use integration tests sparingly for critical simctl interactions requiring real system validation.
+
+**3. IsimctlUIMocks and SimctlKitMocks** (Mock Targets)
+
+- **Responsibility**: Auto-generated mocks from `@mockable` protocols via Mockolo.
+- **Location**: `Tests/<Module>Mocks/<Module>Mocks.generated.swift`
+- **Generation**: Run `make gen-mocks` after adding/modifying `@mockable` protocols
+
+**Decision rule**: Never edit mock files manually. Always regenerate with `make gen-mocks`.
+
+#### Key Development Patterns
+
+**Protocol-Oriented Design**
+
+All mockable components follow this pattern:
+
+```swift
+/// Protocol description
+/// @mockable
+protocol DeviceTableDisplaying: Sendable {
+  func display(_ devices: [Device])
+}
+
+struct DeviceTable: DeviceTableDisplaying {
+  private let noora: any Noorable
+  
+  init(noora: any Noorable) {
+    self.noora = noora
+  }
+  
+  func display(_ devices: [Device]) {
+    // Implementation
+  }
+}
+```
+
+**When to create a protocol:**
+- Component needs mocking for testing
+- Component is a public API in SimctlKit
+- Component wraps external dependencies (Noora, Subprocess)
+
+**Dependency Injection Pattern**
+
+All components use dual initializers:
+
+```swift
+public struct ListDevicesCommand: Sendable {
+  private let simctl: any Simctlable
+  private let deviceTable: any DeviceTableDisplaying
+  
+  // Public init - creates real dependencies
+  public init(noora: any Noorable) {
+    self.init(
+      simctl: Simctl(),
+      deviceTable: DeviceTable(noora: noora)
+    )
+  }
+  
+  // Internal init - for testing with mocks
+  init(
+    simctl: any Simctlable,
+    deviceTable: any DeviceTableDisplaying
+  ) {
+    self.simctl = simctl
+    self.deviceTable = deviceTable
+  }
+}
+```
+
+**File Organization Convention**
+
+- Feature-based directories: Group related files under `Commands/<Feature>/`
+- UI extensions: Use `<Type>+UI.swift` for UI-specific extensions of SimctlKit types
+- Component files: One component per file, named after the component
+- Test files: Mirror source structure with `Tests` suffix (e.g., `SimctlTests.swift`)
+
 ### Unit Testing Guidelines
 
 When writing unit tests, follow these principles to ensure comprehensive coverage and maintainability:
@@ -177,10 +325,10 @@ Test case names must start with the function name under test, followed by a desc
 
 ### Build Command
 
-To build the executable, run:
+To build the project, run:
 
 ```bash
-swift build --product isimctl
+swift build --build-tests
 ```
 
 ### Mock Generation Command
