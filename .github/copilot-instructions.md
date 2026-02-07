@@ -59,7 +59,7 @@ SimctlKit (Core Layer)
   - When implementing command orchestration logic
   - When creating UI-specific data models or extensions
 - **Structure**:
-  - `Commands/<Feature>/` - Feature-based organization (e.g., `ListDevice/` contains all list-related UI components)
+  - `Commands/<Feature>/` - Feature-based organization (e.g., `ListDevices/` contains all list-related UI components)
   - `Noora/` - Shared UI components and Noora wrapper
   - UI extensions use `+UI.swift` suffix (e.g., `SimulatorList+UI.swift`)
 
@@ -87,7 +87,7 @@ SimctlKit (Core Layer)
 - **Location**: `Tests/IsimctlUITests/` and `Tests/SimctlKitTests/`
 - **File placement**: Mirror the source structure exactly:
   - Pattern: `Sources/<Target>/<Path>/<File>.swift` → `Tests/<Target>Tests/<Path>/<File>Tests.swift`
-  - Example: `DeviceTable.swift` in `Sources/IsimctlUI/Commands/ListDevice/` → `DeviceTableTests.swift` in `Tests/IsimctlUITests/Commands/ListDevice/`
+  - Example: `DeviceTable.swift` in `Sources/IsimctlUI/Commands/ListDevices/` → `DeviceTableTests.swift` in `Tests/IsimctlUITests/Commands/ListDevices/`
 
 **Decision rule**: Use unit tests for business logic and UI components with mocked dependencies.
 
