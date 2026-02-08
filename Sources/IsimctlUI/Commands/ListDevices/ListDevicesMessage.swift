@@ -1,9 +1,9 @@
 import Noora
 import SimctlKit
 
-/// Protocol for displaying messages and alerts related to device operations
+/// Protocol for displaying messages and alerts related to listing devices
 /// @mockable
-protocol DeviceMessaging: Sendable {
+protocol ListDevicesMessaging: Sendable {
   /// Shows an alert when no simulators are available
   func showNoSimulatorsAlert()
 
@@ -19,8 +19,8 @@ protocol DeviceMessaging: Sendable {
   func showDeviceCommands(for device: DeviceOption)
 }
 
-/// Component for displaying messages and alerts using Noora
-struct DeviceMessage: DeviceMessaging {
+/// Component for displaying messages and alerts for the list devices command using Noora
+struct ListDevicesMessage: ListDevicesMessaging {
   private let noora: any Noorable
 
   init(noora: any Noorable) {

@@ -75,7 +75,6 @@ let package = Package(
         "IsimctlUI",
       ],
       path: "./Tests/IsimctlUIMocks",
-      exclude: [".gitkeep"],
     ),
 
     .target(
@@ -85,7 +84,6 @@ let package = Package(
         "SimctlKit",
       ],
       path: "./Tests/SimctlKitMocks",
-      exclude: [".gitkeep"],
     ),
   ],
   swiftLanguageModes: [.v6],

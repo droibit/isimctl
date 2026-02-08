@@ -113,7 +113,7 @@ struct XcrunTests {
   }
 
   @Test(arguments: [nil as String?, ""])
-  func run_shouldThrowXcrunErrorWhenNoOutputProvided(output: String?) async throws {
+  func run_shouldReturnEmptyStringWhenNoOutputProvided(output: String?) async throws {
     runner.runHandler = { _, _, _, _ in
       CollectedResult(
         processIdentifier: .init(value: 0),
@@ -123,13 +123,9 @@ struct XcrunTests {
       )
     }
 
-    let expectedError = XcrunError(
-      command: "xcrun simctl list devices",
-      description: "No output received from command.",
-    )
-    await #expect(throws: expectedError) {
-      try await xcrun.run(arguments: ["simctl", "list", "devices"])
-    }
+    let result = try await xcrun.run(arguments: ["simctl", "boot", "device-id"])
+    #expect(result.isEmpty)
+    #expect(runner.runCallCount == 1)
   }
 
   @Test
@@ -158,11 +154,5 @@ struct XcrunTests {
     await #expect(throws: CancellationError.self) {
       try await xcrun.run(arguments: ["simctl", "list", "devices"])
     }
-  }
-}
-
-extension XcrunError: Equatable {
-  static func == (lhs: XcrunError, rhs: XcrunError) -> Bool {
-    lhs.command == rhs.command && lhs.description == rhs.description
   }
 }

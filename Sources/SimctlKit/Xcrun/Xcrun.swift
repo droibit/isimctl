@@ -13,8 +13,9 @@ protocol Xcrunnable: Sendable {
   /// Executes `xcrun` command with specified arguments
   ///
   /// - Parameter arguments: Arguments to pass to xcrun command
-  /// - Returns: Standard output as a UTF-8 encoded String
+  /// - Returns: Standard output as a UTF-8 encoded String, or empty string if no output
   /// - Throws: ``XcrunError`` if command execution fails or output is invalid
+  @discardableResult
   func run(arguments: [String]) async throws -> String
 }
 
@@ -58,29 +59,10 @@ struct Xcrun: Xcrunnable, Sendable {
         description: result.standardError ?? result.standardOutput ?? result.terminationStatus.description,
       )
     }
-
-    guard let standardOutput = result.standardOutput, !standardOutput.isEmpty else {
-      throw XcrunError(
-        command: makeCommand(from: arguments),
-        description: "No output received from command.",
-      )
-    }
-    return standardOutput
+    return result.standardOutput ?? ""
   }
 
   private func makeCommand(from arguments: [String]) -> String {
     "xcrun " + arguments.joined(separator: " ")
-  }
-}
-
-// MARK: - Error
-
-/// Internal error type for xcrun command execution failures
-struct XcrunError: LocalizedError, Sendable {
-  let command: String
-  let description: String
-
-  var errorDescription: String {
-    "Command failed: \(command)\n\(description)"
   }
 }

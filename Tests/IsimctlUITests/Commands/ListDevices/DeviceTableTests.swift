@@ -1,4 +1,3 @@
-import Foundation
 import Noora
 import SimctlKit
 import Testing
@@ -27,7 +26,7 @@ struct DeviceTableTests {
     )
     deviceTable.display(device)
 
-    let table = TableAssertion(output: noora.description)
+    let table = NooraTableAssertion(output: noora.description)
     // Verify header row contains all column names
     try table.assertHeader(containsInOrder: ["Name", "State", "UDID", "Device Type Identifier"])
     let headerRow = try #require(table.headerRow)
@@ -64,7 +63,7 @@ struct DeviceTableTests {
     )
     deviceTable.display(in: runtime)
 
-    let table = TableAssertion(output: noora.description)
+    let table = NooraTableAssertion(output: noora.description)
     // Verify header row contains all column names
     try table.assertHeader(containsInOrder: ["Name", "State", "UDID", "Device Type Identifier"])
     let headerRow = try #require(table.headerRow)
@@ -110,7 +109,7 @@ struct DeviceTableTests {
     ]
     deviceTable.display(devicesWithRuntime)
 
-    let table = TableAssertion(output: noora.description)
+    let table = NooraTableAssertion(output: noora.description)
     // Verify header row contains all column names including Runtime
     try table.assertHeader(containsInOrder: ["Runtime", "Name", "State", "UDID", "Device Type Identifier"])
     // Verify first device data row (index 0)
@@ -129,53 +128,5 @@ struct DeviceTableTests {
       "33333333-3333-3333-3333-333333333333",
       "com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Series-10-46mm",
     ])
-  }
-}
-
-// MARK: - Helpers
-
-private struct TableAssertion {
-  let headerRow: String?
-  let dataRows: [String]
-
-  init(output: String) {
-    let lines = output.split(separator: "\n").map { String($0) }
-    // Filter out border lines (╭, ├, ╰)
-    let contentLines = lines.filter { line in
-      !line.hasPrefix("╭") && !line.hasPrefix("├") && !line.hasPrefix("╰")
-    }
-
-    // First content line is the header
-    headerRow = contentLines.first
-    // Remaining lines are data rows
-    dataRows = Array(contentLines.dropFirst())
-  }
-
-  subscript(index: Int) -> String? {
-    guard index >= 0, index < dataRows.count else {
-      return nil
-    }
-    return dataRows[index]
-  }
-
-  func assertHeader(containsInOrder items: [String]) throws {
-    let header = try #require(headerRow)
-    assertRowContent(header, containsInOrder: items)
-  }
-
-  func assertRow(at index: Int, containsInOrder items: [String]) throws {
-    let row = try #require(self[index])
-    assertRowContent(row, containsInOrder: items)
-  }
-
-  private func assertRowContent(_ row: String, containsInOrder items: [String]) {
-    var currentIndex = row.startIndex
-    for item in items {
-      guard let range = row.range(of: item, range: currentIndex ..< row.endIndex) else {
-        Issue.record("Row does not contain '\(item)' after previous item")
-        return
-      }
-      currentIndex = range.upperBound
-    }
   }
 }

@@ -59,11 +59,20 @@ SimctlKit (Core Layer)
   - When implementing command orchestration logic
   - When creating UI-specific data models or extensions
 - **Structure**:
-  - `Commands/<Feature>/` - Feature-based organization (e.g., `ListDevices/` contains all list-related UI components)
-  - `Noora/` - Shared UI components and Noora wrapper
-  - UI extensions use `+UI.swift` suffix (e.g., `SimulatorList+UI.swift`)
+  - `Shared/` - Reusable UI components shared across multiple commands
+  - `Commands/<Feature>/` - Feature-based and command-specific components
+- **Subdirectory Details**:
+  - **`Shared/`** - Components used by two or more commands (e.g., `DeviceSelectionPrompt`, `SimctlErrorAlert`)
+    - Also contains Noora library extensions (e.g., `Noora+Shared.swift`)
+    - Naming convention: One component per file, named after the component (e.g., `DeviceSelectionPrompt.swift`)
+  - **`Commands/<Feature>/`** - Command-specific UI and logic
+    - Example: `ListDevices/` contains `ListDevicesCommand.swift` and `ListDevicesMessage.swift` (feature-specific message component)
+    - Contains command orchestration, feature-specific messages, and UI components that are not shared
 
-**Decision rule**: If code involves user interaction or Noora components, it belongs in IsimctlUI.
+**Decision rule**: 
+- If a UI component or message is used by **multiple commands**, place it in `Shared/`
+- If a UI component or message is used by **only one command**, place it in `Commands/<Feature>/`
+- The clear directory separation (`Shared/` vs `Commands/<Feature>/`) prevents confusion about where to add new components
 
 **3. SimctlKit** (Library Target)
 
@@ -87,7 +96,8 @@ SimctlKit (Core Layer)
 - **Location**: `Tests/IsimctlUITests/` and `Tests/SimctlKitTests/`
 - **File placement**: Mirror the source structure exactly:
   - Pattern: `Sources/<Target>/<Path>/<File>.swift` → `Tests/<Target>Tests/<Path>/<File>Tests.swift`
-  - Example: `DeviceTable.swift` in `Sources/IsimctlUI/Commands/ListDevices/` → `DeviceTableTests.swift` in `Tests/IsimctlUITests/Commands/ListDevices/`
+  - Example (Shared): `DeviceSelectionPrompt.swift` in `Sources/IsimctlUI/Shared/` → `DeviceSelectionPromptTests.swift` in `Tests/IsimctlUITests/Shared/`
+  - Example (Command-specific): `DeviceTable.swift` in `Sources/IsimctlUI/Commands/ListDevices/` → `DeviceTableTests.swift` in `Tests/IsimctlUITests/Commands/ListDevices/`
 
 **Decision rule**: Use unit tests for business logic and UI components with mocked dependencies.
 
@@ -169,7 +179,6 @@ public struct ListDevicesCommand: Sendable {
 **File Organization Convention**
 
 - Feature-based directories: Group related files under `Commands/<Feature>/`
-- UI extensions: Use `<Type>+UI.swift` for UI-specific extensions of SimctlKit types
 - Component files: One component per file, named after the component
 - Test files: Mirror source structure with `Tests` suffix (e.g., `SimctlTests.swift`)
 
@@ -216,6 +225,32 @@ When writing unit tests, follow these principles to ensure comprehensive coverag
   ```
 - **Clarity Through Comments**: Use inline comments (`// Then:`, `// Given:`) to explicitly document the intent of each test phase.
 - **Mock Handler Setup**: Configure mock return values and behaviors using handler closures to simulate various scenarios.
+
+### Test Data Generation (Stub)
+
+Test data helpers are centralized in dedicated stub files within Mocks targets to promote reusability across tests.
+
+**Placement & Naming:**
+- Location: `Tests/<Target>Mocks/Stub/`
+- File naming: `<TypeName or FileName>+Stub.swift` (e.g., `RuntimeDeviceGroupOption+Stub.swift`, `SimulatorList+Stub.swift`)
+
+**Implementation:**
+```swift
+extension TargetType {
+  /// Creates a test stub with customizable parameters.
+  static func stub(
+    param1: String = "default",
+    param2: Int = 0,
+  ) -> Self {
+    .init(param1: param1, param2: param2)
+  }
+}
+```
+
+**Guidelines:**
+- Use extension methods on the target type (not top-level functions)
+- Provide sensible defaults for all parameters
+- Place in the Mocks target corresponding to the source layer
 
 ## Code Style Guidelines
 
@@ -320,6 +355,23 @@ Test case names must start with the function name under test, followed by a desc
     // Test implementation
   }
   ```
+
+### Messaging Guidelines
+
+isimctl is positioned as an **interactive tool** dedicated to providing a conversational user experience. All user-facing messages should adopt a conversational tone.
+
+**Messaging Principles:**
+
+- **Conversational questions**: Use second-person questions to guide user actions
+  - Preferred: `"Which device would you like to boot?"`
+  - Avoid: `"Select a device"`, `"Select a device to boot"`
+- **Noora component usage**:
+  - `noora.success()` – Device operations completed successfully
+  - `noora.info()` – General information or alerts requiring user attention
+  - Use `.alert()` for important messages with optional `takeaways` for guidance
+- **Message protocols**: Create protocol-based message components for command-specific messages
+  - Example: `BootDeviceMessaging` protocol with implementation in `BootDeviceMessage`
+  - Allows dependency injection and testing via mocks
 
 ## Build and Test Information
 

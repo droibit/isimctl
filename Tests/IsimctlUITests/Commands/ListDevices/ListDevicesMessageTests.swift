@@ -1,23 +1,20 @@
-import Foundation
 import Noora
 import SimctlKit
 import Testing
 @testable import IsimctlUI
 
-struct DeviceMessageTests {
+struct ListDevicesMessageTests {
   private let noora: NooraMock
-  private let deviceMessage: DeviceMessage
+  private let message: ListDevicesMessage
 
   init() {
     noora = NooraMock()
-    deviceMessage = DeviceMessage(noora: noora)
+    message = ListDevicesMessage(noora: noora)
   }
-
-  // MARK: - showNoSimulatorsAlert Tests
 
   @Test
   func showNoSimulatorsAlert_shouldDisplayCorrectMessage() {
-    deviceMessage.showNoSimulatorsAlert()
+    message.showNoSimulatorsAlert()
 
     let output = noora.description
     #expect(output == """
@@ -29,11 +26,9 @@ struct DeviceMessageTests {
     """)
   }
 
-  // MARK: - showNoDevicesFoundAlert Tests
-
   @Test
   func showNoDevicesFoundAlert_shouldDisplayCorrectMessage() {
-    deviceMessage.showNoDevicesFoundAlert()
+    message.showNoDevicesFoundAlert()
 
     let output = noora.description
     #expect(output == """
@@ -45,11 +40,9 @@ struct DeviceMessageTests {
     """)
   }
 
-  // MARK: - showNoDevicesForRuntimeMessage Tests
-
   @Test
   func showNoDevicesForRuntimeMessage_shouldDisplayCorrectMessage() {
-    deviceMessage.showNoDevicesForRuntimeMessage()
+    message.showNoDevicesForRuntimeMessage()
 
     let output = noora.description
     #expect(output == """
@@ -57,8 +50,6 @@ struct DeviceMessageTests {
       No devices available for the selected runtime.
     """)
   }
-
-  // MARK: - showDeviceCommands Tests
 
   @Test
   func showDeviceCommands_shouldDisplayCorrectCommands() {
@@ -69,7 +60,7 @@ struct DeviceMessageTests {
       deviceTypeIdentifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
     )
     let deviceOption = DeviceOption(device)
-    deviceMessage.showDeviceCommands(for: deviceOption)
+    message.showDeviceCommands(for: deviceOption)
 
     let output = noora.description
     #expect(output == """

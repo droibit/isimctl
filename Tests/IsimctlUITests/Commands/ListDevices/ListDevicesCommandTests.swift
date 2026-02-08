@@ -11,7 +11,7 @@ struct ListDevicesCommandTests {
   private let simctl: SimctlableMock
   private let deviceTable: DeviceTableDisplayingMock
   private let deviceSelectionPrompt: DeviceSelectionPromptingMock
-  private let deviceMessage: DeviceMessagingMock
+  private let deviceMessage: ListDevicesMessagingMock
   private let simctlErrorAlert: SimctlErrorAlertingMock
   private let command: ListDevicesCommand
 
@@ -20,7 +20,7 @@ struct ListDevicesCommandTests {
     simctl = SimctlableMock()
     deviceTable = DeviceTableDisplayingMock()
     deviceSelectionPrompt = DeviceSelectionPromptingMock()
-    deviceMessage = DeviceMessagingMock()
+    deviceMessage = ListDevicesMessagingMock()
     simctlErrorAlert = SimctlErrorAlertingMock()
     command = ListDevicesCommand(
       simctl: simctl,
@@ -38,14 +38,14 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldDisplayTableWhenShowAllTrueAndNoSearchTerm() async throws {
     // Given: Multiple runtimes with multiple devices
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Shutdown")
-    let device2 = makeDevice(name: "iPhone 16", state: "Booted")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let device2 = Device.stub(name: "iPhone 16", state: "Booted")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1, device2]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
 
-    let selectedRuntime = makeRuntimeDeviceGroupOption(
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
       runtime: "iOS 26.2",
       devices: [device1, device2],
     )
@@ -79,20 +79,20 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldDisplayDeviceDetailsWhenShowAllFalseAndNoSearchTerm() async throws {
     // Given: Multiple runtimes with multiple devices
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Shutdown")
-    let device2 = makeDevice(name: "iPhone 16", state: "Booted")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let device2 = Device.stub(name: "iPhone 16", state: "Booted")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1, device2]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
 
-    let selectedRuntime = makeRuntimeDeviceGroupOption(
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
       runtime: "iOS 26.2",
       devices: [device1, device2],
     )
     deviceSelectionPrompt.selectRuntimeHandler = { _, _ in selectedRuntime }
 
-    let selectedDeviceOption = makeDeviceOption(device1)
+    let selectedDeviceOption = DeviceOption(device1)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDeviceOption }
 
     // When
@@ -128,9 +128,9 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldDisplayTableImmediatelyWhenShowAllTrueAndSearchTerm() async throws {
     // Given: Search term returns multiple devices
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Booted")
-    let device2 = makeDevice(name: "iPhone 16", state: "Booted")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Booted")
+    let device2 = Device.stub(name: "iPhone 16", state: "Booted")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1, device2]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
@@ -139,7 +139,7 @@ struct ListDevicesCommandTests {
     try await command.run(searchTerm: "booted", showAll: true)
 
     // Then: simctl.listDevices is called with correct searchTerm
-    #expect(simctl.listDevicesArgValues == ["booted"])
+    #expect(simctl.listDevicesArgValues == [.init("booted")])
 
     // Then: Table display is called immediately with devices and runtime
     #expect(deviceTable.displayDevicesWithRuntimeArgValues == [
@@ -161,13 +161,13 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldSelectRuntimeWithAutoselectWhenShowAllFalseAndSearchTerm() async throws {
     // Given: Search term returns devices in multiple runtimes
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Shutdown")
-    let device2 = makeDevice(name: "iPad Pro", state: "Shutdown")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let device2 = Device.stub(name: "iPad Pro", state: "Shutdown")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1]),
       (id: "com.apple.CoreSimulator.SimRuntime.iPadOS-26-2", devices: [device2]),
     ])
-    let selectedRuntime = makeRuntimeDeviceGroupOption(
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
       runtime: "iOS 26.2",
       devices: [device1],
     )
@@ -178,7 +178,7 @@ struct ListDevicesCommandTests {
     try await command.run(searchTerm: "available", showAll: false)
 
     // Then: simctl.listDevices is called with correct searchTerm
-    #expect(simctl.listDevicesArgValues == ["available"])
+    #expect(simctl.listDevicesArgValues == [.init("available")])
 
     // Then: Runtime selection is called with autoselectSingleChoice=true
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 1)
@@ -201,7 +201,7 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldShowNoSimulatorsAlertWhenDevicesIsEmpty() async throws {
     // Given: No devices exist
-    let simulators = makeSimulatorList(runtimes: [])
+    let simulators = SimulatorList.stub(runtimes: [])
     simctl.listDevicesHandler = { _ in simulators }
 
     // When
@@ -220,7 +220,7 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldShowNoDevicesFoundAlertWhenSearchResultEmptyWithShowAllTrue() async throws {
     // Given: Search term but no matching devices (empty result after filtering)
-    let simulators = makeSimulatorList(runtimes: [
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: []),
     ])
     simctl.listDevicesHandler = { _ in simulators }
@@ -239,7 +239,7 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldShowNoDevicesFoundAlertWhenSearchResultEmptyWithShowAllFalse() async throws {
     // Given: Search term but no matching devices
-    let simulators = makeSimulatorList(runtimes: [
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: []),
     ])
     simctl.listDevicesHandler = { _ in simulators }
@@ -258,13 +258,13 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldShowNoDevicesForRuntimeMessageWhenSelectedRuntimeHasNoDevices() async throws {
     // Given: Runtime is selected but it has no devices
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Shutdown")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
 
-    let selectedRuntime = makeRuntimeDeviceGroupOption(
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
       runtime: "iOS 26.2",
       devices: [],
     )
@@ -294,12 +294,7 @@ struct ListDevicesCommandTests {
     try await command.run(searchTerm: nil, showAll: true)
 
     // Then: Error alert is shown
-    #expect(simctlErrorAlert.showCallCount == 1)
-    if case .xcrunNotFound = simctlErrorAlert.showArgValues[0] {
-      // Expected error type
-    } else {
-      Issue.record("Expected xcrunNotFound error")
-    }
+    #expect(simctlErrorAlert.showArgValues == [.xcrunNotFound])
 
     // Then: No UI components are called
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 0)
@@ -327,14 +322,14 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldDisplayTableWhenSingleRuntimeAndShowAllTrue() async throws {
     // Given: Single runtime with multiple devices
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Shutdown")
-    let device2 = makeDevice(name: "iPhone 16", state: "Booted")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let device2 = Device.stub(name: "iPhone 16", state: "Booted")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1, device2]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
 
-    let selectedRuntime = makeRuntimeDeviceGroupOption(
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
       runtime: "iOS 26.2",
       devices: [device1, device2],
     )
@@ -353,13 +348,13 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldAutoselectRuntimeWhenSingleRuntimeAndSearchTerm() async throws {
     // Given: Search term returns devices in single runtime
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Booted")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Booted")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
 
-    let selectedRuntime = makeRuntimeDeviceGroupOption(
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
       runtime: "iOS 26.2",
       devices: [device1],
     )
@@ -383,13 +378,13 @@ struct ListDevicesCommandTests {
   @Test
   func run_shouldHandleEmptyStringSearchTermAsNoSearchTerm() async throws {
     // Given: Empty string as search term
-    let device1 = makeDevice(name: "iPhone 16 Pro", state: "Shutdown")
-    let simulators = makeSimulatorList(runtimes: [
+    let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-26-2", devices: [device1]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
 
-    let selectedRuntime = makeRuntimeDeviceGroupOption(
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
       runtime: "iOS 26.2",
       devices: [device1],
     )
@@ -398,8 +393,8 @@ struct ListDevicesCommandTests {
     // When: Empty string is treated as no search term
     try await command.run(searchTerm: "", showAll: true)
 
-    // Then: simctl.listDevices is called with empty searchTerm
-    #expect(simctl.listDevicesArgValues == [""])
+    // Then: simctl.listDevices is called with nil searchTerm (empty string is converted to nil)
+    #expect(simctl.listDevicesArgValues == [nil])
 
     // Then: Runtime selection is called with autoselectSingleChoice=false (like no search term)
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 1)
@@ -409,37 +404,4 @@ struct ListDevicesCommandTests {
     // Then: Table display is called
     #expect(deviceTable.displayInCallCount == 1)
   }
-}
-
-// MARK: - Test Data Helpers
-
-private func makeDevice(
-  name: String = "iPhone 16 Pro",
-  state: String = "Shutdown",
-  udid: String = "12345678-1234-1234-1234-123456789012",
-  deviceTypeIdentifier: String = "com.apple.CoreSimulator.SimDeviceType.iPhone-16-Pro",
-) -> Device {
-  Device(
-    name: name,
-    state: state,
-    udid: udid,
-    deviceTypeIdentifier: deviceTypeIdentifier,
-  )
-}
-
-private func makeSimulatorList(
-  runtimes: [(id: String, devices: [Device])],
-) -> SimulatorList {
-  SimulatorList(Dictionary(uniqueKeysWithValues: runtimes.map { ($0.id, $0.devices) }))
-}
-
-private func makeRuntimeDeviceGroupOption(
-  runtime: String,
-  devices: [Device],
-) -> RuntimeDeviceGroupOption {
-  RuntimeDeviceGroupOption(runtime: runtime, devices: devices)
-}
-
-private func makeDeviceOption(_ device: Device) -> DeviceOption {
-  DeviceOption(device)
 }

@@ -36,15 +36,15 @@ public struct ListDevicesCommand: Sendable {
   private let simctl: any Simctlable
   private let deviceTable: any DeviceTableDisplaying
   private let deviceSelectionPrompt: any DeviceSelectionPrompting
-  private let deviceMessage: any DeviceMessaging
+  private let deviceMessage: any ListDevicesMessaging
   private let simctlErrorAlert: any SimctlErrorAlerting
 
   public init(noora: any Noorable) {
     self.init(
       simctl: Simctl(),
       deviceTable: DeviceTable(noora: noora),
-      deviceSelectionPrompt: DeviceSelectionPrompt(noora: noora),
-      deviceMessage: DeviceMessage(noora: noora),
+      deviceSelectionPrompt: DeviceSelectionPrompt(noora: noora, purpose: .listDevices),
+      deviceMessage: ListDevicesMessage(noora: noora),
       simctlErrorAlert: SimctlErrorAlert(noora: noora),
     )
   }
@@ -53,7 +53,7 @@ public struct ListDevicesCommand: Sendable {
     simctl: any Simctlable,
     deviceTable: any DeviceTableDisplaying,
     deviceSelectionPrompt: any DeviceSelectionPrompting,
-    deviceMessage: any DeviceMessaging,
+    deviceMessage: any ListDevicesMessaging,
     simctlErrorAlert: any SimctlErrorAlerting,
   ) {
     self.simctl = simctl
@@ -77,18 +77,13 @@ public struct ListDevicesCommand: Sendable {
   /// - If `showAll=true`: Displays all matching devices immediately without runtime selection
   /// - If `showAll=false`: Prompts runtime selection (auto-selects if only one option), then displays matching devices
   ///
-  /// ## Error Handling
-  ///
-  /// If `simctl.listDevices()` throws a `SimctlError`, the error is caught and displayed via `simctlErrorAlert`.
-  /// Non-`SimctlError` exceptions are rethrown.
-  ///
   /// - Parameters:
   ///   - searchTerm: Optional search term to filter devices (e.g., "booted", "available"). If nil or empty, shows all available devices.
   ///   - showAll: If `true`, displays all devices (or all matching devices if searchTerm is provided) in a table format.
   ///     If `false`, prompts the user to select a specific device (when searchTerm is nil) or shows filtered results by runtime.
   public func run(searchTerm: String?, showAll: Bool) async throws {
     do {
-      let srcSimulators = try await simctl.listDevices(searchTerm: searchTerm)
+      let srcSimulators = try await simctl.listDevices(searchTerm: DeviceSearchTerm(searchTerm))
       guard !srcSimulators.devices.isEmpty else {
         deviceMessage.showNoSimulatorsAlert()
         return

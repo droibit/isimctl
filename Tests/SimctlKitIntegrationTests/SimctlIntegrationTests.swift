@@ -28,6 +28,6 @@ struct SimctlIntegrationTests {
 
     // This test verifies that the "booted" search term is accepted
     // The result may be empty if no devices are booted
-    _ = try await simctl.listDevices(searchTerm: "booted")
+    _ = try await simctl.listDevices(searchTerm: .booted)
   }
 }

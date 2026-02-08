@@ -54,12 +54,12 @@ struct SimctlTests {
       """
     }
 
-    _ = try await simctl.listDevices(searchTerm: "booted")
+    _ = try await simctl.listDevices(searchTerm: .booted)
     #expect(xcrun.runArgValues == [["simctl", "list", "devices", "booted", "--json"]])
   }
 
-  @Test(arguments: [nil as String?, ""])
-  func listDevices_shouldCallXcrunWithCorrectArgumentsWhenNoSearchTerm(searchTerm: String?) async throws {
+  @Test
+  func listDevices_shouldCallXcrunWithCorrectArgumentsWhenNoSearchTerm() async throws {
     xcrun.isAvailableHandler = { true }
     xcrun.runHandler = { _ in
       """
@@ -69,7 +69,7 @@ struct SimctlTests {
       """
     }
 
-    _ = try await simctl.listDevices(searchTerm: searchTerm)
+    _ = try await simctl.listDevices(searchTerm: nil)
     #expect(xcrun.runArgValues == [["simctl", "list", "devices", "--json"]])
   }
 
@@ -153,19 +153,58 @@ struct SimctlTests {
     let result = try await simctl.listDevices(searchTerm: nil)
     #expect(result.devices.isEmpty)
   }
-}
 
-extension SimctlError: Equatable {
-  static func == (lhs: SimctlError, rhs: SimctlError) -> Bool {
-    switch (lhs, rhs) {
-    case (.xcrunNotFound, .xcrunNotFound):
-      true
-    case let (.commandFailed(lhsCommand, lhsDescription), .commandFailed(rhsCommand, rhsDescription)):
-      lhsCommand == rhsCommand && lhsDescription == rhsDescription
-    case let (.invalidOutput(lhsSummary, lhsDescription), .invalidOutput(rhsSummary, rhsDescription)):
-      lhsSummary == rhsSummary && lhsDescription == rhsDescription
-    default:
-      false
+  // MARK: - bootDevice
+
+  @Test
+  func bootDevice_shouldCallXcrunWithCorrectArguments() async throws {
+    // Given: Mock xcrun to return successfully
+    xcrun.isAvailableHandler = { true }
+    xcrun.runHandler = { _ in "" }
+
+    // When: Boot a device
+    try await simctl.bootDevice(udid: "test-udid-123")
+
+    // Then: Verify xcrun was called with correct arguments
+    #expect(xcrun.runArgValues == [["simctl", "boot", "test-udid-123"]])
+  }
+
+  @Test
+  func bootDevice_shouldThrowXcrunNotFoundWhenXcrunIsNotAvailable() async throws {
+    // Given: xcrun is not available
+    xcrun.isAvailableHandler = { false }
+
+    // When/Then: Expect xcrunNotFound error
+    let expectedError = SimctlError.xcrunNotFound
+    await #expect(throws: expectedError) {
+      try await simctl.bootDevice(udid: "test-udid")
     }
+
+    // Then: Verify xcrun.run was not called
+    #expect(xcrun.runCallCount == 0)
+  }
+
+  @Test
+  func bootDevice_shouldThrowCommandFailedWhenXcrunThrowsError() async throws {
+    // Given: xcrun throws an error (e.g., device already booted or invalid UUID)
+    xcrun.isAvailableHandler = { true }
+    xcrun.runHandler = { _ in
+      throw XcrunError(
+        command: "xcrun simctl boot test-udid",
+        description: "Unable to boot device in current state: Booted",
+      )
+    }
+
+    // When/Then: Expect commandFailed error
+    let expectedError = SimctlError.commandFailed(
+      command: "xcrun simctl boot test-udid",
+      description: "Unable to boot device in current state: Booted",
+    )
+    await #expect(throws: expectedError) {
+      try await simctl.bootDevice(udid: "test-udid")
+    }
+
+    // Then: Verify xcrun.run was called once
+    #expect(xcrun.runCallCount == 1)
   }
 }
