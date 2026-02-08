@@ -9,6 +9,7 @@ struct Isimctl: AsyncParsableCommand {
     version: "0.0.1",
     subcommands: [
       ListCommand.self,
+      BootCommand.self,
     ],
   )
 }
