@@ -28,6 +28,7 @@ jobs:
       - uses: irgaly/setup-mint@v1
         with:
           mint-directory: .github
+          cache-prefix: ${{ matrix.os }}
 
       - name: Generate mocks with Mockolo
         run: make gen-mocks

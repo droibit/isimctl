@@ -21,10 +21,14 @@ jobs:
   lint:
     name: Code Quality Checks
     runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app
     steps:
       - uses: actions/checkout@v5
 
       - uses: irgaly/setup-mint@v1
+        with:
+          cache-prefix: ${{ matrix.os }}
 
       - name: Verify code formatting with SwiftFormat
         run: ./scripts/swiftformat.sh --all
