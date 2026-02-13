@@ -51,7 +51,7 @@ struct BootDeviceCommandTests {
     try await command.run()
 
     // Then: simctl.listDevices is called with correct searchTerm
-    #expect(simctl.listDevicesArgValues == [.booted])
+    #expect(simctl.listDevicesArgValues == [.available])
 
     // Then: Runtime selection is called with autoselectSingleChoice=false
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 1)
@@ -215,6 +215,105 @@ struct BootDeviceCommandTests {
 
     // Then: Error alert is NOT called
     #expect(simctlErrorAlert.showCallCount == 0)
+  }
+
+  // MARK: - Confirmation Feature
+
+  @Test
+  func run_shouldBootDeviceWhenConfirmationIsAccepted() async throws {
+    // Given: A device exists and user confirms the boot
+    let device = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let simulators = SimulatorList.stub(runtimes: [
+      (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device]),
+    ])
+    simctl.listDevicesHandler = { _ in simulators }
+
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
+      runtime: "iOS 18.2",
+      devices: [device],
+    )
+    deviceSelectionPrompt.selectRuntimeHandler = { _, _ in selectedRuntime }
+
+    let selectedDevice = DeviceOption(device)
+    deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
+
+    bootDeviceMessage.confirmBootHandler = { true }
+    simctl.bootDeviceHandler = { _ in }
+
+    // When: shouldConfirm is true
+    try await command.run(shouldConfirm: true)
+
+    // Then: Confirmation is requested
+    #expect(bootDeviceMessage.confirmBootCallCount == 1)
+
+    // Then: Boot process is executed
+    #expect(bootDeviceMessage.showBootingDeviceMessageArgValues == [selectedDevice])
+    #expect(simctl.bootDeviceArgValues == [device.udid])
+    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
+  }
+
+  @Test
+  func run_shouldNotBootDeviceWhenConfirmationIsRejected() async throws {
+    // Given: A device exists and user rejects the boot
+    let device = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let simulators = SimulatorList.stub(runtimes: [
+      (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device]),
+    ])
+    simctl.listDevicesHandler = { _ in simulators }
+
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
+      runtime: "iOS 18.2",
+      devices: [device],
+    )
+    deviceSelectionPrompt.selectRuntimeHandler = { _, _ in selectedRuntime }
+
+    let selectedDevice = DeviceOption(device)
+    deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
+
+    bootDeviceMessage.confirmBootHandler = { false }
+
+    // When: shouldConfirm is true
+    try await command.run(shouldConfirm: true)
+
+    // Then: Confirmation is requested
+    #expect(bootDeviceMessage.confirmBootCallCount == 1)
+
+    // Then: Boot process is NOT executed
+    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 0)
+    #expect(simctl.bootDeviceCallCount == 0)
+    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
+  }
+
+  @Test
+  func run_shouldSkipConfirmationWhenShouldConfirmIsFalse() async throws {
+    // Given: A device exists
+    let device = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
+    let simulators = SimulatorList.stub(runtimes: [
+      (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device]),
+    ])
+    simctl.listDevicesHandler = { _ in simulators }
+
+    let selectedRuntime = RuntimeDeviceGroupOption.stub(
+      runtime: "iOS 18.2",
+      devices: [device],
+    )
+    deviceSelectionPrompt.selectRuntimeHandler = { _, _ in selectedRuntime }
+
+    let selectedDevice = DeviceOption(device)
+    deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
+
+    simctl.bootDeviceHandler = { _ in }
+
+    // When: shouldConfirm is false (default behavior)
+    try await command.run(shouldConfirm: false)
+
+    // Then: Confirmation is NOT requested
+    #expect(bootDeviceMessage.confirmBootCallCount == 0)
+
+    // Then: Boot process is executed directly
+    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
+    #expect(simctl.bootDeviceArgValues == [device.udid])
+    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
   }
 
   // MARK: - Additional Test Cases

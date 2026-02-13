@@ -47,12 +47,15 @@ public struct BootDeviceCommand: Sendable {
   /// 1. Fetching available (shut down) devices
   /// 2. Prompting the user to select a runtime environment
   /// 3. Prompting the user to select a device from the selected runtime
-  /// 4. Executing the boot command
-  /// 5. Displaying the result
-  public func run() async throws {
+  /// 4. Optionally prompting for confirmation (if shouldConfirm is true)
+  /// 5. Executing the boot command
+  /// 6. Displaying the result
+  ///
+  /// - Parameter shouldConfirm: Whether to prompt for confirmation before booting. Defaults to false.
+  public func run(shouldConfirm: Bool = false) async throws {
     do {
       let simulators = try await simctl
-        .listDevices(searchTerm: .booted)
+        .listDevices(searchTerm: .available)
         .filtering(state: .shutdown)
       guard !simulators.devices.isEmpty else {
         bootDeviceMessage.showNoBootableDevicesAlert()
@@ -66,6 +69,12 @@ public struct BootDeviceCommand: Sendable {
       let selectedDevice = deviceSelectionPrompt.selectDevice(
         from: selectedRuntime.toDeviceOptions(),
       )
+
+      if shouldConfirm {
+        guard bootDeviceMessage.confirmBoot() else {
+          return
+        }
+      }
 
       bootDeviceMessage.showBootingDeviceMessage(for: selectedDevice)
 

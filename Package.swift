@@ -2,7 +2,6 @@
 import PackageDescription
 
 private extension PackageDescription.Target.Dependency {
-  // static let factory: Self = .product(name: "Factory", package: "Factory")
   static let argumentParser: Self = .product(name: "ArgumentParser", package: "swift-argument-parser")
   static let subprocess: Self = .product(name: "Subprocess", package: "swift-subprocess")
   static let noora: Self = .product(name: "Noora", package: "Noora")

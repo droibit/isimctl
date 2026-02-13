@@ -4,6 +4,11 @@ import SimctlKit
 /// Protocol for displaying messages related to booting a device
 /// @mockable
 protocol BootDeviceMessaging: Sendable {
+  /// Prompts the user to confirm the boot operation
+  ///
+  /// - Returns: `true` if the user confirms, `false` otherwise
+  func confirmBoot() -> Bool
+
   /// Shows a message indicating the device is being booted
   ///
   /// - Parameter device: The device option being booted
@@ -24,6 +29,13 @@ struct BootDeviceMessage: BootDeviceMessaging {
 
   init(noora: any Noorable) {
     self.noora = noora
+  }
+
+  func confirmBoot() -> Bool {
+    noora.yesOrNoChoicePrompt(
+      question: "Would you like to boot?",
+      defaultAnswer: true,
+    )
   }
 
   func showBootingDeviceMessage(for device: DeviceOption) {

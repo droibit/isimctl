@@ -6,7 +6,7 @@ struct BootCommand: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "boot",
     abstract: "Interactively boot a simulator",
-    usage: "isimctl boot",
+    usage: "isimctl boot [options]",
     discussion: """
     Boots a simulator using an interactive interface.
 
@@ -17,8 +17,11 @@ struct BootCommand: AsyncParsableCommand {
     """,
   )
 
+  @Flag(name: [.short, .long], help: "Prompt for confirmation before booting.")
+  var confirm: Bool = false
+
   mutating func run() async throws {
     let command = BootDeviceCommand(noora: Noora.current)
-    try await command.run()
+    try await command.run(shouldConfirm: confirm)
   }
 }
