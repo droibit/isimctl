@@ -1,4 +1,6 @@
 import Foundation
+import Subprocess
+import SubprocessKit
 
 /// Protocol for executing `xcrun simctl` commands
 /// @mockable
@@ -20,18 +22,19 @@ public protocol Simctlable: Sendable {
 
 /// Public interface for executing simctl commands
 public struct Simctl: Simctlable, Sendable {
-  private let xcrun: any Xcrunnable
+  private let runner: any CommandRunnable
+  private let xcrun = Executable.name("xcrun")
 
   public init() {
-    self.init(xcrun: Xcrun())
+    self.init(runner: CommandRunner())
   }
 
-  init(xcrun: any Xcrunnable) {
-    self.xcrun = xcrun
+  init(runner: any CommandRunnable) {
+    self.runner = runner
   }
 
   public func listDevices(searchTerm: DeviceSearchTerm?) async throws -> SimulatorList {
-    guard xcrun.isAvailable() else {
+    guard runner.isExecutableAvailable(xcrun) else {
       throw SimctlError.xcrunNotFound
     }
 
@@ -41,9 +44,9 @@ public struct Simctl: Simctlable, Sendable {
         arguments.append(term)
       }
       arguments.append("--json")
-      let output = try await xcrun.run(arguments: arguments)
+      let output = try await runner.runForOutput(xcrun, arguments: Arguments(arguments))
       return try JSONDecoder().decode(SimulatorList.self, from: output.data(using: .utf8)!)
-    } catch let error as XcrunError {
+    } catch let error as CommandExecutionError {
       throw SimctlError.commandFailed(command: error.command, description: error.description)
     } catch let error as DecodingError {
       throw SimctlError.invalidOutput(
@@ -56,14 +59,14 @@ public struct Simctl: Simctlable, Sendable {
   public func bootDevice(udid: String) async throws {
     precondition(!udid.isEmpty, "udid must not be empty")
 
-    guard xcrun.isAvailable() else {
+    guard runner.isExecutableAvailable(xcrun) else {
       throw SimctlError.xcrunNotFound
     }
 
     do {
       let arguments = ["simctl", "boot", udid]
-      try await xcrun.run(arguments: arguments)
-    } catch let error as XcrunError {
+      try await runner.execute(xcrun, arguments: Arguments(arguments))
+    } catch let error as CommandExecutionError {
       throw SimctlError.commandFailed(command: error.command, description: error.description)
     }
   }

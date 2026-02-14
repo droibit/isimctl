@@ -2,10 +2,22 @@
 
 ## Summary
 
-`isimctl` is a CLI tool written in Swift that acts as a wrapper for the `xcrun simctl list` command.   
-Its primary goal is to provide an interactive and user-friendly way to browse and display formatted simulator information.
+`isimctl` is an interactive simulator management tool written in Swift.   
+Its primary goal is to provide an interactive and user-friendly way to browse and manage Xcode simulators through a conversational terminal interface.
 
 The name `isimctl` is derived from "interactive simctl".
+
+### Architectural Layers
+
+While `isimctl` provides comprehensive simulator management capabilities, the codebase maintains clear architectural boundaries:
+
+- **SubprocessKit** (Infrastructure Layer): Provides subprocess execution abstraction with `CommandRunnable` protocol. Wraps swift-subprocess and provides convenience methods for running commands with output capture or execution-only modes. This layer is reusable across different command-line tool wrappers.
+- **SimulatorKit** (macOS Integration Layer): Wraps macOS-specific simulator operations such as opening Simulator.app using the `open` command. Built on SubprocessKit for process execution.
+- **SimctlKit** (Core Layer): Strictly wraps `xcrun simctl` commands only. This layer remains a pure simctl wrapper, built on SubprocessKit for process execution.
+- **IsimctlUI** (UI Layer): Handles interactive terminal UI and orchestrates operations, delegating to SimulatorKit for macOS-specific operations and SimctlKit for simctl commands.
+- **Isimctl** (CLI Layer): Command-line interface and argument parsing.
+
+This separation allows the project to provide broader simulator management features while maintaining a clean, focused core that strictly wraps simctl functionality.
 
 ## Environment & Compatibility
 
@@ -27,14 +39,18 @@ The name `isimctl` is derived from "interactive simctl".
 
 ### Project Structure
 
-The project follows a layered architecture with three main source targets and corresponding test infrastructure:
+The project follows a layered architecture with five main source targets and corresponding test infrastructure:
 
 ```
 Isimctl (CLI Layer)
     ↓ depends on
 IsimctlUI (UI Layer)
-    ↓ depends on
-SimctlKit (Core Layer)
+    ↓ depends on (both)
+SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
+    ↓                                ↓
+    └────────────────────────────────┘
+                    ↓
+         SubprocessKit (Infrastructure Layer)
 ```
 
 #### Sources/ Directory Targets
@@ -76,17 +92,46 @@ SimctlKit (Core Layer)
 
 **3. SimctlKit** (Library Target)
 
-- **Responsibility**: Core simctl wrapper, subprocess execution, and data models. Platform-agnostic and reusable.
+- **Responsibility**: Core simctl wrapper and data models. Platform-agnostic and reusable.
 - **Location**: `Sources/SimctlKit/`
 - **When to use**:
   - When adding new simctl command wrappers
   - When adding data models for simctl JSON responses
-  - When modifying subprocess execution logic
+  - When adding simctl-specific error handling
 - **Structure**:
   - `Simctl.swift` - Main `Simctlable` protocol and implementation
-  - `Xcrun/` - Subprocess execution layer (internal)
+  - `SimctlError.swift` - Error types for simctl operations
+  - `SimulatorList.swift` - Data model for device list JSON response
+  - `DeviceSearchTerm.swift` - Search term type for filtering devices
 
 **Decision rule**: If code wraps `xcrun simctl` or defines platform-agnostic models, it belongs in SimctlKit. No UI dependencies allowed.
+
+**4. SimulatorKit** (Library Target)
+
+- **Responsibility**: macOS-specific simulator operations. Wraps macOS commands for simulator management.
+- **Location**: `Sources/SimulatorKit/`
+- **When to use**:
+  - When adding macOS-specific simulator operations (e.g., opening Simulator.app)
+  - When wrapping macOS commands not part of `xcrun simctl`
+- **Structure**:
+  - `OpenSimulator.swift` - `SimulatorOpenable` protocol and `OpenSimulator` implementation
+  - `OpenSimulatorError.swift` - Error type for simulator operations
+
+**Decision rule**: If code uses macOS-specific commands (like `open`) for simulator management, it belongs in SimulatorKit. Built on SubprocessKit for process execution.
+
+**5. SubprocessKit** (Library Target)
+
+- **Responsibility**: Subprocess execution abstraction wrapping swift-subprocess package. Provides a mockable interface for running external processes with `CommandRunnable` protocol and `CommandExecutionError` for unified error handling.
+- **Location**: `Sources/SubprocessKit/`
+- **When to use**:
+  - When adding subprocess execution functionality
+  - When creating wrappers for command-line tools
+  - When modifying process execution infrastructure
+- **Structure**:
+  - `CommandRunner.swift` - `CommandRunnable` protocol and `CommandRunner` implementation
+  - `CommandExecutionError.swift` - Error type for command execution failures
+
+**Decision rule**: If code executes external processes via the Subprocess package, it belongs in SubprocessKit. This layer provides `CommandRunnable` protocol for mockable command execution and `CommandExecutionError` for unified error handling across SimctlKit and SimulatorKit.
 
 #### Tests/ Directory Targets
 
@@ -109,7 +154,7 @@ SimctlKit (Core Layer)
 
 **Decision rule**: Use integration tests sparingly for critical simctl interactions requiring real system validation.
 
-**3. IsimctlUIMocks and SimctlKitMocks** (Mock Targets)
+**3. IsimctlUIMocks, SimctlKitMocks, SimulatorKitMocks, and SubprocessKitMocks** (Mock Targets)
 
 - **Responsibility**: Auto-generated mocks from `@mockable` protocols via Mockolo.
 - **Location**: `Tests/<Module>Mocks/<Module>Mocks.generated.swift`

@@ -4,8 +4,8 @@ import ArgumentParser
 struct Isimctl: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "isimctl",
-    abstract: "Interactive wrapper for xcrun simctl command",
-    discussion: "isimctl provides an interactive and user-friendly way to browse simulators. It simplifies interaction with Xcode's simulator control (simctl) command through an intuitive interface.",
+    abstract: "Interactive simulator management tool",
+    discussion: "isimctl provides an interactive and user-friendly way to manage Xcode simulators. It simplifies simulator operations through a conversational terminal interface, guiding you through device selection and management tasks.",
     version: "0.0.1",
     subcommands: [
       ListCommand.self,

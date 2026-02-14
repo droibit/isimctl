@@ -19,7 +19,9 @@ run_mockolo() {
 
 END_DATE=$(date +"%s")
 
+run_mockolo "SubprocessKit"
 run_mockolo "SimctlKit"
+run_mockolo "SimulatorKit"
 run_mockolo "IsimctlUI"
 
 DIFF=$(($END_DATE - $START_DATE))

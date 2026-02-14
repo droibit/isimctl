@@ -32,10 +32,23 @@ let package = Package(
       dependencies: [
         .noora,
         "SimctlKit",
+        "SimulatorKit",
       ],
     ),
     .target(
       name: "SimctlKit",
+      dependencies: [
+        "SubprocessKit",
+      ],
+    ),
+    .target(
+      name: "SimulatorKit",
+      dependencies: [
+        "SubprocessKit",
+      ],
+    ),
+    .target(
+      name: "SubprocessKit",
       dependencies: [
         .subprocess,
       ],
@@ -50,6 +63,8 @@ let package = Package(
         "IsimctlUIMocks",
         "SimctlKit",
         "SimctlKitMocks",
+        "SimulatorKit",
+        "SimulatorKitMocks",
       ],
     ),
     .testTarget(
@@ -57,6 +72,8 @@ let package = Package(
       dependencies: [
         "SimctlKit",
         "SimctlKitMocks",
+        "SubprocessKit",
+        "SubprocessKitMocks",
       ],
     ),
     .testTarget(
@@ -79,10 +96,26 @@ let package = Package(
     .target(
       name: "SimctlKitMocks",
       dependencies: [
-        .subprocess,
         "SimctlKit",
       ],
       path: "./Tests/SimctlKitMocks",
+    ),
+
+    .target(
+      name: "SimulatorKitMocks",
+      dependencies: [
+        "SimulatorKit",
+      ],
+      path: "./Tests/SimulatorKitMocks",
+    ),
+
+    .target(
+      name: "SubprocessKitMocks",
+      dependencies: [
+        .subprocess,
+        "SubprocessKit",
+      ],
+      path: "./Tests/SubprocessKitMocks",
     ),
   ],
   swiftLanguageModes: [.v6],

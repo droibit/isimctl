@@ -1,14 +1,13 @@
+import Subprocess
 import Testing
 @testable import SimctlKit
+@testable import SubprocessKit
 
 struct SimctlIntegrationTests {
   private let simctl = Simctl()
-  private let xcrun = Xcrun()
 
   @Test
   func listDevices_shouldReturnDevicesWithValidProperties() async throws {
-    try #require(xcrun.isAvailable(), "xcrun is not available")
-
     let simulatorList = try await simctl.listDevices(searchTerm: nil)
     for (runtime, devices) in simulatorList.devices {
       #expect(!runtime.isEmpty)
@@ -24,8 +23,6 @@ struct SimctlIntegrationTests {
 
   @Test
   func listDevices_shouldFilterDevicesWhenSearchTermProvided() async throws {
-    try #require(xcrun.isAvailable(), "xcrun is not available")
-
     // This test verifies that the "booted" search term is accepted
     // The result may be empty if no devices are booted
     _ = try await simctl.listDevices(searchTerm: .booted)
