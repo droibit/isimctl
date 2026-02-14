@@ -16,12 +16,12 @@ done
 
 run_lint() {
   local filepath=$(readlink -f "${1}")
-  xcrun --sdk macosx mint run swiftlint swiftlint "${filepath}"
+  xcrun --sdk macosx mint run swiftlint swiftlint "${filepath}" --strict
 }
 
 if [ "$RUN_ALL" = true ]; then
   project_path=$(readlink -f ".")
-  xcrun --sdk macosx mint run swiftlint swiftlint "${project_path}"
+  xcrun --sdk macosx mint run swiftlint swiftlint "${project_path}" --strict
 else
   git diff --diff-filter=d --name-only -- "*.swift" | while read filename; do run_lint "${filename}"; done
   git diff --cached --diff-filter=d --name-only -- "*.swift" | while read filename; do run_lint "${filename}"; done

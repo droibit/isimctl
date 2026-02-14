@@ -11,12 +11,12 @@ public struct DeviceSearchTerm: Equatable, Sendable {
   }
 
   /// Predefined search term for "booted" devices
-  public static var booted: DeviceSearchTerm {
-    DeviceSearchTerm("booted")!
+  public static var booted: Self {
+    .init("booted")!
   }
 
   /// Predefined search term for "available" devices
-  public static var available: DeviceSearchTerm {
-    DeviceSearchTerm("available")!
+  public static var available: Self {
+    .init("available")!
   }
 }
