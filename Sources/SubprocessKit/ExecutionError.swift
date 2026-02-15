@@ -1,4 +1,5 @@
 public import Foundation
+import Subprocess
 
 /// Error thrown when command execution fails
 ///
@@ -10,13 +11,13 @@ public import Foundation
 ///
 /// ```swift
 /// do {
-///   try await runner.execute(.name("false"), arguments: [])
-/// } catch let error as CommandExecutionError {
+///   try await executor.execute(arguments: [])
+/// } catch let error as ExecutionError {
 ///   print(error.command)      // "false"
 ///   print(error.description)  // Exit status details
 /// }
 /// ```
-public struct CommandExecutionError: Equatable, LocalizedError, Sendable {
+public struct ExecutionError: Equatable, LocalizedError {
   /// The command that failed, including the executable and arguments
   ///
   /// This string representation helps identify which command caused the error.
@@ -43,5 +44,23 @@ public struct CommandExecutionError: Equatable, LocalizedError, Sendable {
 
   public var errorDescription: String? {
     "Command failed: \(command)\n\(description)"
+  }
+}
+
+extension ExecutionError {
+  init(
+    command: String,
+    from result: CollectedResult<StringOutput<Unicode.UTF8>, StringOutput<Unicode.UTF8>>,
+  ) {
+    let description = result.standardError ?? result.standardOutput ?? result.terminationStatus.description
+    self.init(command: command, description: description)
+  }
+
+  init(
+    command: String,
+    from result: CollectedResult<DiscardedOutput, StringOutput<Unicode.UTF8>>,
+  ) {
+    let description = result.standardError ?? result.terminationStatus.description
+    self.init(command: command, description: description)
   }
 }

@@ -11,7 +11,7 @@ The name `isimctl` is derived from "interactive simctl".
 
 While `isimctl` provides comprehensive simulator management capabilities, the codebase maintains clear architectural boundaries:
 
-- **SubprocessKit** (Infrastructure Layer): Provides subprocess execution abstraction with `CommandRunnable` protocol. Wraps swift-subprocess and provides convenience methods for running commands with output capture or execution-only modes. This layer is reusable across different command-line tool wrappers.
+- **SubprocessKit** (Infrastructure Layer): Provides subprocess execution abstraction with `Executing` protocol. Wraps swift-subprocess and provides convenience methods for running commands with output capture or execution-only modes. This layer is reusable across different command-line tool wrappers.
 - **SimulatorKit** (macOS Integration Layer): Wraps macOS-specific simulator operations such as opening Simulator.app using the `open` command. Built on SubprocessKit for process execution.
 - **SimctlKit** (Core Layer): Strictly wraps `xcrun simctl` commands only. This layer remains a pure simctl wrapper, built on SubprocessKit for process execution.
 - **IsimctlUI** (UI Layer): Handles interactive terminal UI and orchestrates operations, delegating to SimulatorKit for macOS-specific operations and SimctlKit for simctl commands.
@@ -39,6 +39,14 @@ This separation allows the project to provide broader simulator management featu
 
 ### Project Structure
 
+**Maintenance Philosophy:**
+
+This documentation prioritizes maintainability by describing **patterns** over exhaustive listings. Specific file names and component examples are included only when essential for understanding the architecture. When the codebase evolves:
+
+- **Use discovery tools**: Leverage `list_dir` or `file_search` to find current files rather than updating documentation
+- **Update only when**: Architectural layers change, new targets are added, or naming conventions evolve
+- **Preserve**: Decision rules, responsibility descriptions, and structural patterns (these change infrequently)
+
 The project follows a layered architecture with five main source targets and corresponding test infrastructure:
 
 ```
@@ -61,8 +69,8 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
 - **Location**: `Sources/Isimctl/`
 - **When to use**: When adding command-line argument definitions or new subcommands.
 - **Structure**:
-  - `Isimctl.swift` - Main entry point with `@main`
-  - `Commands/` - Subcommand definitions (e.g., `ListCommand.swift`)
+  - Main entry point with `@main` (e.g., `Isimctl.swift`)
+  - `Commands/` directory containing subcommand definitions
 
 **Decision rule**: Isimctl should only parse arguments and delegate to IsimctlUI. No business logic or UI rendering here.
 
@@ -77,18 +85,18 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
 - **Structure**:
   - `Shared/` - Reusable UI components shared across multiple commands
   - `Commands/<Feature>/` - Feature-based and command-specific components
-- **Subdirectory Details**:
-  - **`Shared/`** - Components used by two or more commands (e.g., `DeviceSelectionPrompt`, `SimctlErrorAlert`)
-    - Also contains Noora library extensions (e.g., `Noora+Shared.swift`)
-    - Naming convention: One component per file, named after the component (e.g., `DeviceSelectionPrompt.swift`)
-  - **`Commands/<Feature>/`** - Command-specific UI and logic
-    - Example: `ListDevices/` contains `ListDevicesCommand.swift` and `ListDevicesMessage.swift` (feature-specific message component)
-    - Contains command orchestration, feature-specific messages, and UI components that are not shared
+- **Subdirectory organization**:
+  - **`Shared/`** - Components used by multiple commands (reusable prompts, alerts, etc.)
+    - Includes Noora library extensions following `<Type>+Shared.swift` pattern
+    - One component per file, named after the component
+  - **`Commands/<Feature>/`** - Command-specific implementations
+    - Pattern: `<Feature>Command.swift` and optional `<Feature>Message.swift`
+    - Example: `ListDevices/` contains `ListDevicesCommand.swift` and `ListDevicesMessage.swift`
+    - Contains orchestration logic, feature-specific messages, and single-use UI components
 
 **Decision rule**: 
-- If a UI component or message is used by **multiple commands**, place it in `Shared/`
-- If a UI component or message is used by **only one command**, place it in `Commands/<Feature>/`
-- The clear directory separation (`Shared/` vs `Commands/<Feature>/`) prevents confusion about where to add new components
+- Multiple commands use it → `Shared/`
+- Single command uses it → `Commands/<Feature>/`
 
 **3. SimctlKit** (Library Target)
 
@@ -98,11 +106,11 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
   - When adding new simctl command wrappers
   - When adding data models for simctl JSON responses
   - When adding simctl-specific error handling
-- **Structure**:
-  - `Simctl.swift` - Main `Simctlable` protocol and implementation
-  - `SimctlError.swift` - Error types for simctl operations
-  - `SimulatorList.swift` - Data model for device list JSON response
-  - `DeviceSearchTerm.swift` - Search term type for filtering devices
+- **Structure**: Focused target containing:
+  - Main protocol and implementation (e.g., `Simctlable` protocol in `Simctl.swift`)
+  - Error types for simctl operations
+  - Data models for JSON responses
+  - Domain types (search terms, filters)
 
 **Decision rule**: If code wraps `xcrun simctl` or defines platform-agnostic models, it belongs in SimctlKit. No UI dependencies allowed.
 
@@ -113,36 +121,36 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
 - **When to use**:
   - When adding macOS-specific simulator operations (e.g., opening Simulator.app)
   - When wrapping macOS commands not part of `xcrun simctl`
-- **Structure**:
-  - `OpenSimulator.swift` - `SimulatorOpenable` protocol and `OpenSimulator` implementation
-  - `OpenSimulatorError.swift` - Error type for simulator operations
+- **Structure**: Small target typically containing:
+  - Protocol and implementation pairs (e.g., `SimulatorOpenable` in `OpenSimulator.swift`)
+  - Error types for simulator operations
 
 **Decision rule**: If code uses macOS-specific commands (like `open`) for simulator management, it belongs in SimulatorKit. Built on SubprocessKit for process execution.
 
 **5. SubprocessKit** (Library Target)
 
-- **Responsibility**: Subprocess execution abstraction wrapping swift-subprocess package. Provides a mockable interface for running external processes with `CommandRunnable` protocol and `CommandExecutionError` for unified error handling.
+- **Responsibility**: Subprocess execution abstraction wrapping swift-subprocess package. Provides a mockable interface for running external processes with `Executing` protocol and `ExecutionError` for unified error handling.
 - **Location**: `Sources/SubprocessKit/`
 - **When to use**:
   - When adding subprocess execution functionality
   - When creating wrappers for command-line tools
   - When modifying process execution infrastructure
-- **Structure**:
-  - `CommandRunner.swift` - `CommandRunnable` protocol and `CommandRunner` implementation
-  - `CommandExecutionError.swift` - Error type for command execution failures
+- **Structure**: Infrastructure layer containing:
+  - Protocol and implementation (e.g., `Executing` in `Executor.swift`)
+  - Unified error handling types
 
-**Decision rule**: If code executes external processes via the Subprocess package, it belongs in SubprocessKit. This layer provides `CommandRunnable` protocol for mockable command execution and `CommandExecutionError` for unified error handling across SimctlKit and SimulatorKit.
+**Decision rule**: If code executes external processes via the Subprocess package, it belongs in SubprocessKit. This layer provides `Executing` protocol for mockable command execution and `ExecutionError` for unified error handling across SimctlKit and SimulatorKit.
 
 #### Tests/ Directory Targets
 
-**1. IsimctlUITests** and **SimctlKitTests** (Unit Test Targets)
+**1. Unit Test Targets** (`Tests/<Module>Tests/`)
 
 - **Responsibility**: Unit tests using Mockolo-generated mocks for isolated component testing.
-- **Location**: `Tests/IsimctlUITests/` and `Tests/SimctlKitTests/`
-- **File placement**: Mirror the source structure exactly:
-  - Pattern: `Sources/<Target>/<Path>/<File>.swift` → `Tests/<Target>Tests/<Path>/<File>Tests.swift`
-  - Example (Shared): `DeviceSelectionPrompt.swift` in `Sources/IsimctlUI/Shared/` → `DeviceSelectionPromptTests.swift` in `Tests/IsimctlUITests/Shared/`
-  - Example (Command-specific): `DeviceTable.swift` in `Sources/IsimctlUI/Commands/ListDevices/` → `DeviceTableTests.swift` in `Tests/IsimctlUITests/Commands/ListDevices/`
+- **Pattern**: Each source module has a corresponding test target (e.g., `Sources/IsimctlUI/` → `Tests/IsimctlUITests/`)
+- **File placement**: `Sources/<Target>/<Path>/<File>.swift` → `Tests/<Target>Tests/<Path>/<File>Tests.swift`
+  - Example: `DeviceSelectionPrompt.swift` in `Sources/IsimctlUI/Shared/` → `DeviceSelectionPromptTests.swift` in `Tests/IsimctlUITests/Shared/`
+
+Test files mirror the exact source directory structure with `Tests` suffix.
 
 **Decision rule**: Use unit tests for business logic and UI components with mocked dependencies.
 
@@ -154,9 +162,10 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
 
 **Decision rule**: Use integration tests sparingly for critical simctl interactions requiring real system validation.
 
-**3. IsimctlUIMocks, SimctlKitMocks, SimulatorKitMocks, and SubprocessKitMocks** (Mock Targets)
+**3. Mock Targets** (`Tests/<Module>Mocks/`)
 
 - **Responsibility**: Auto-generated mocks from `@mockable` protocols via Mockolo.
+- **Pattern**: Each module with mockable protocols has a corresponding mock target (e.g., `IsimctlUIMocks`, `SimctlKitMocks`)
 - **Location**: `Tests/<Module>Mocks/<Module>Mocks.generated.swift`
 - **Generation**: Run `make gen-mocks` after adding/modifying `@mockable` protocols
 

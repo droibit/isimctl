@@ -82,6 +82,21 @@ let package = Package(
         "SimctlKit",
       ],
     ),
+    .testTarget(
+      name: "SimulatorKitTests",
+      dependencies: [
+        "SimulatorKit",
+        "SimulatorKitMocks",
+        "SubprocessKit",
+        "SubprocessKitMocks",
+      ],
+    ),
+    .testTarget(
+      name: "SubprocessKitTests",
+      dependencies: [
+        "SubprocessKit",
+      ],
+    ),
 
     // MARK: - Mocks
 
@@ -92,7 +107,6 @@ let package = Package(
       ],
       path: "./Tests/IsimctlUIMocks",
     ),
-
     .target(
       name: "SimctlKitMocks",
       dependencies: [
@@ -100,7 +114,6 @@ let package = Package(
       ],
       path: "./Tests/SimctlKitMocks",
     ),
-
     .target(
       name: "SimulatorKitMocks",
       dependencies: [
@@ -108,7 +121,6 @@ let package = Package(
       ],
       path: "./Tests/SimulatorKitMocks",
     ),
-
     .target(
       name: "SubprocessKitMocks",
       dependencies: [

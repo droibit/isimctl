@@ -22,19 +22,18 @@ public protocol Simctlable: Sendable {
 
 /// Public interface for executing simctl commands
 public struct Simctl: Simctlable, Sendable {
-  private let runner: any CommandRunnable
-  private let xcrun = Executable.name("xcrun")
+  private let xcrun: any Executing
 
   public init() {
-    self.init(runner: CommandRunner())
+    self.init(xcrun: Executor(executable: .name("xcrun")))
   }
 
-  init(runner: any CommandRunnable) {
-    self.runner = runner
+  init(xcrun: any Executing) {
+    self.xcrun = xcrun
   }
 
   public func listDevices(searchTerm: DeviceSearchTerm?) async throws -> SimulatorList {
-    guard runner.isExecutableAvailable(xcrun) else {
+    guard xcrun.isExecutableAvailable() else {
       throw SimctlError.xcrunNotFound
     }
 
@@ -44,10 +43,10 @@ public struct Simctl: Simctlable, Sendable {
         arguments.append(term)
       }
       arguments.append("--json")
-      let output = try await runner.runForOutput(xcrun, arguments: Arguments(arguments))
+      let output = try await xcrun.captureOutput(arguments: Arguments(arguments))
       return try JSONDecoder().decode(SimulatorList.self, from: output.data(using: .utf8)!)
-    } catch let error as CommandExecutionError {
-      throw SimctlError.commandFailed(command: error.command, description: error.description)
+    } catch let error as ExecutionError {
+      throw SimctlError.commandFailed(error: error)
     } catch let error as DecodingError {
       throw SimctlError.invalidOutput(
         summary: "Failed to parse device information.",
@@ -59,15 +58,15 @@ public struct Simctl: Simctlable, Sendable {
   public func bootDevice(udid: String) async throws {
     precondition(!udid.isEmpty, "udid must not be empty")
 
-    guard runner.isExecutableAvailable(xcrun) else {
+    guard xcrun.isExecutableAvailable() else {
       throw SimctlError.xcrunNotFound
     }
 
     do {
       let arguments = ["simctl", "boot", udid]
-      try await runner.execute(xcrun, arguments: Arguments(arguments))
-    } catch let error as CommandExecutionError {
-      throw SimctlError.commandFailed(command: error.command, description: error.description)
+      try await xcrun.execute(arguments: Arguments(arguments))
+    } catch let error as ExecutionError {
+      throw SimctlError.commandFailed(error: error)
     }
   }
 }

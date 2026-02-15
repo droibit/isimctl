@@ -14,15 +14,14 @@ public protocol SimulatorOpenable: Sendable {
 
 /// Opens Simulator.app using macOS `open` command
 public struct OpenSimulator: SimulatorOpenable {
-  private let openCommand = Executable.name("open")
-  private let runner: any CommandRunnable
+  private let open: any Executing
 
   public init() {
-    self.init(runner: CommandRunner())
+    self.init(open: Executor(executable: .name("open")))
   }
 
-  init(runner: any CommandRunnable) {
-    self.runner = runner
+  init(open: any Executing) {
+    self.open = open
   }
 
   public func open(udid: String?) async throws {
@@ -32,12 +31,9 @@ public struct OpenSimulator: SimulatorOpenable {
     }
 
     do {
-      try await runner.execute(openCommand, arguments: Arguments(arguments))
-    } catch let error as CommandExecutionError {
-      throw OpenSimulatorError(
-        command: error.command,
-        description: error.description,
-      )
+      try await open.execute(arguments: Arguments(arguments))
+    } catch let error as ExecutionError {
+      throw OpenSimulatorError(error)
     }
   }
 }
