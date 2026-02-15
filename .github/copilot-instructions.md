@@ -111,6 +111,11 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
   - Error types for simctl operations
   - Data models for JSON responses
   - Domain types (search terms, filters)
+- **Error Naming**:
+  - Pattern: `<ImplementationName>Error` (e.g., `Simctl` → `SimctlError`)
+  - File naming: Separate file as `<ErrorType>.swift` (e.g., `SimctlError.swift`)
+  - Conformance: All error types must conform to `LocalizedError` and `Equatable`
+  - Example: `Simctlable` protocol → `Simctl` implementation → `SimctlError` error type
 
 **Decision rule**: If code wraps `xcrun simctl` or defines platform-agnostic models, it belongs in SimctlKit. No UI dependencies allowed.
 
@@ -124,6 +129,11 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
 - **Structure**: Small target typically containing:
   - Protocol and implementation pairs (e.g., `SimulatorOpenable` in `OpenSimulator.swift`)
   - Error types for simulator operations
+- **Error Naming**:
+  - Pattern: `<ImplementationName>Error` (e.g., `OpenSimulator` → `OpenSimulatorError`)
+  - File naming: Separate file as `<ErrorType>.swift` (e.g., `OpenSimulatorError.swift`)
+  - Conformance: All error types must conform to `LocalizedError` and `Equatable`
+  - Example: `SimulatorOpenable` protocol → `OpenSimulator` implementation → `OpenSimulatorError` error type
 
 **Decision rule**: If code uses macOS-specific commands (like `open`) for simulator management, it belongs in SimulatorKit. Built on SubprocessKit for process execution.
 
@@ -267,7 +277,7 @@ When writing unit tests, follow these principles to ensure comprehensive coverag
 - **Given-When-Then Pattern**: Use the Given-When-Then structure for complex test scenarios to improve readability:
   ```swift
   // Given: Setup test data and mock behaviors
-  let device = makeDevice(name: "iPhone 16 Pro")
+  let device = Device(name: "iPhone 16 Pro")
   mock.handler = { _ in device }
 
   // When: Execute the code under test
@@ -350,6 +360,38 @@ import Testing
 
 ### Naming Conventions
 
+#### Protocol Naming
+
+All mockable protocols follow suffix-based naming conventions that convey their semantic purpose. The choice of suffix depends on whether the protocol describes a behavior/action or a capability/feature.
+
+**Default Pattern: `-ing` Suffix (Behavior/Action)**
+
+Use the `-ing` suffix when the protocol describes what a type *does* or what action it performs.
+
+- **UI Layer Examples**:
+  - `DeviceTableDisplaying` - performs device table display
+  - `DeviceSelectionPrompting` - performs device selection prompting
+  - `SimctlErrorAlerting` - performs error alerting
+  - `BootDeviceMessaging` - performs boot device messaging
+- **Infrastructure Examples**:
+  - `Executing` - performs command execution
+
+**Alternative Pattern: `-able` Suffix (Capability/Feature)**
+
+Use the `-able` suffix when the protocol describes what a type *can do* or what capability it has. This pattern aligns with Swift standard library conventions (e.g., `Codable`, `Equatable`, `Hashable`, `Identifiable`).
+
+- **Core/Integration Layer Examples**:
+  - `Simctlable` - has the capability to perform simctl operations
+  - `SimulatorOpenable` - has the capability to open simulators
+
+**Decision Guideline:**
+
+When creating a new protocol, ask:
+- "Does this protocol describe an action being performed?" → Use `-ing`
+- "Does this protocol describe a capability or feature the type has?" → Use `-able`
+
+The `-ing` suffix is preferred as the default unless the protocol clearly represents a capability or feature rather than a behavior.
+
 #### Noora UI Component Naming
 
 Components that wrap Noora terminal UI elements follow a consistent naming convention to ensure clarity and consistency across the codebase.
@@ -364,8 +406,25 @@ Components that wrap Noora terminal UI elements follow a consistent naming conve
 
 - Use a domain prefix that describes the feature or responsibility (e.g., `Device`, `SimctlError`)
 - Use a simple, direct name for the UI element purpose (e.g., `Table`, `Prompt`, `Alert`, `Message`)
-- Protocol names always append `-ing` suffix to indicate they describe capabilities
+- Protocol names always append `-ing` suffix for UI components (see Protocol Naming section for general protocol naming guidelines)
 - Avoid redundant suffixes like "Component" or "UI"
+
+### Messaging Guidelines
+
+isimctl is positioned as an **interactive tool** dedicated to providing a conversational user experience. All user-facing messages should adopt a conversational tone.
+
+**Messaging Principles:**
+
+- **Conversational questions**: Use second-person questions to guide user actions
+  - Preferred: `"Which device would you like to boot?"`
+  - Avoid: `"Select a device"`, `"Select a device to boot"`
+- **Noora component usage**:
+  - `noora.success()` – Device operations completed successfully
+  - `noora.info()` – General information or alerts requiring user attention
+  - Use `.alert()` for important messages with optional `takeaways` for guidance
+- **Message protocols**: Create protocol-based message components for command-specific messages
+  - Example: `BootDeviceMessaging` protocol with implementation in `BootDeviceMessage`
+  - Allows dependency injection and testing via mocks
 
 #### Test File and Struct Naming
 
@@ -409,23 +468,6 @@ Test case names must start with the function name under test, followed by a desc
     // Test implementation
   }
   ```
-
-### Messaging Guidelines
-
-isimctl is positioned as an **interactive tool** dedicated to providing a conversational user experience. All user-facing messages should adopt a conversational tone.
-
-**Messaging Principles:**
-
-- **Conversational questions**: Use second-person questions to guide user actions
-  - Preferred: `"Which device would you like to boot?"`
-  - Avoid: `"Select a device"`, `"Select a device to boot"`
-- **Noora component usage**:
-  - `noora.success()` – Device operations completed successfully
-  - `noora.info()` – General information or alerts requiring user attention
-  - Use `.alert()` for important messages with optional `takeaways` for guidance
-- **Message protocols**: Create protocol-based message components for command-specific messages
-  - Example: `BootDeviceMessaging` protocol with implementation in `BootDeviceMessage`
-  - Allows dependency injection and testing via mocks
 
 ## Build and Test Information
 
