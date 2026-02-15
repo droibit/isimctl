@@ -75,6 +75,36 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SimctlKitIntegrationTests"
+               BuildableName = "SimctlKitIntegrationTests"
+               BlueprintName = "SimctlKitIntegrationTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SimctlKitTests"
+               BuildableName = "SimctlKitTests"
+               BlueprintName = "SimctlKitTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SimulatorKitTests"
+               BuildableName = "SimulatorKitTests"
+               BlueprintName = "SimulatorKitTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

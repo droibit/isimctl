@@ -20,8 +20,29 @@
     {
       "target" : {
         "containerPath" : "container:",
-        "identifier" : "CoreTests",
-        "name" : "CoreTests"
+        "identifier" : "SimctlKitIntegrationTests",
+        "name" : "SimctlKitIntegrationTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SimulatorKitTests",
+        "name" : "SimulatorKitTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "IsimctlUITests",
+        "name" : "IsimctlUITests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SimctlKitTests",
+        "name" : "SimctlKitTests"
       }
     }
   ],
