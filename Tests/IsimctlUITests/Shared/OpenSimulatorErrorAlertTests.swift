@@ -21,6 +21,7 @@ struct OpenSimulatorErrorAlertTests {
     errorAlert.show(error)
 
     let output = noora.description
+    // swiftlint:disable trailing_whitespace
     #expect(output == """
     stderr: ✖ Error
     stderr:   Command Failed: 'open -a \"Simulator\" --args -CurrentDeviceUDID ABC123'
@@ -30,5 +31,6 @@ struct OpenSimulatorErrorAlertTests {
     stderr:    ▸ Please ensure Simulator.app is installed
     stderr:    ▸ Please report this issue at: https://github.com/droibit/isimctl
     """)
+    // swiftlint:enable trailing_whitespace
   }
 }

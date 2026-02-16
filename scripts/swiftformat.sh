@@ -7,10 +7,10 @@ fi
 
 START_DATE=$(date +"%s")
 
-RUN_ALL=false
+RUN_LINT=false
 for arg in "$@"; do
-  if [ "$arg" = "--all" ]; then
-    RUN_ALL=true
+  if [ "$arg" = "--lint" ]; then
+    RUN_LINT=true
   fi
 done
 
@@ -19,9 +19,9 @@ run_format() {
   xcrun --sdk macosx mint run swiftformat swiftformat "${filepath}"
 }
 
-if [ "$RUN_ALL" = true ]; then
+if [ "$RUN_LINT" = true ]; then
   project_path=$(readlink -f ".")
-  xcrun --sdk macosx mint run swiftformat swiftformat "${project_path}"
+  xcrun --sdk macosx mint run swiftformat swiftformat --lint "${project_path}"
 else
   git diff --diff-filter=d --name-only -- "*.swift" | while read filename; do run_format "${filename}"; done
   git diff --cached --diff-filter=d --name-only -- "*.swift" | while read filename; do run_format "${filename}"; done

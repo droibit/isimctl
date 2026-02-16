@@ -31,7 +31,7 @@ jobs:
           cache-prefix: ${{ matrix.os }}
 
       - name: Verify code formatting with SwiftFormat
-        run: ./scripts/swiftformat.sh --all
+        run: ./scripts/swiftformat.sh --lint
 
       - name: Verify code style with SwiftLint
         run: ./scripts/swiftlint.sh --all
