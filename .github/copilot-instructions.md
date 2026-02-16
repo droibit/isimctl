@@ -74,6 +74,16 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
 
 **Decision rule**: Isimctl should only parse arguments and delegate to IsimctlUI. No business logic or UI rendering here.
 
+**NEW COMMAND CHECKLIST**:
+1. Create command file in `Sources/Isimctl/Commands/<CommandName>.swift`
+   - Define `AsyncParsableCommand` with `CommandConfiguration`
+   - Add flags/options as needed
+   - Delegate to IsimctlUI in `run()` method
+2. **REQUIRED**: Register command in `Sources/Isimctl/Isimctl.swift`
+   - Add `<CommandName>.self` to `CommandConfiguration.subcommands` array
+   - Without this step, the command will not be accessible via CLI
+3. Verify registration: `swift run isimctl --help` (command should appear in list)
+
 **2. IsimctlUI** (Library Target)
 
 - **Responsibility**: Interactive terminal UI components using Noora and command business logic.
@@ -232,7 +242,7 @@ public struct ListDevicesCommand: Sendable {
   // Internal init - for testing with mocks
   init(
     simctl: any Simctlable,
-    deviceTable: any DeviceTableDisplaying
+    deviceTable: any DeviceTableDisplaying,
   ) {
     self.simctl = simctl
     self.deviceTable = deviceTable

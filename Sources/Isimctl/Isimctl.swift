@@ -11,6 +11,7 @@ struct Isimctl: AsyncParsableCommand {
     subcommands: [
       ListCommand.self,
       BootCommand.self,
+      OpenCommand.self,
     ],
   )
 }

@@ -76,7 +76,7 @@ public struct BootDeviceCommand: Sendable {
         }
       }
 
-      bootDeviceMessage.showBootingDeviceMessage(for: selectedDevice)
+      bootDeviceMessage.showBootingDeviceMessage()
 
       try await simctl.bootDevice(udid: selectedDevice.device.udid)
 

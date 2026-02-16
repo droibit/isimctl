@@ -12,7 +12,7 @@ run_mockolo() {
   local output_dir="./Tests/${source_path}Mocks"
   mkdir -p "$output_dir"
 
-  local module="$(echo "${1}" | sed -e 's|/||g')"
+  local module="$(echo "${source_path}" | sed -e 's|/||g')"
   mint run uber/mockolo mockolo \
     -s "./Sources/${source_path}" \
     -d "${output_dir}/${module}Mocks.generated.swift" \

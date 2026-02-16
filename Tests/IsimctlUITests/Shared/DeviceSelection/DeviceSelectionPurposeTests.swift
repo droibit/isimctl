@@ -21,4 +21,14 @@ struct DeviceSelectionPurposeTests {
     #expect(questions.runtime == "Which runtime contains the device to boot?")
     #expect(questions.device == "Which device would you like to boot?")
   }
+
+  // MARK: - openDevice Case
+
+  @Test
+  func openDevice_questions_shouldReturnCorrectText() {
+    let purpose = DeviceSelectionPurpose.openDevice
+    let questions = purpose.questions
+    #expect(questions.runtime == "Which runtime contains the device to open?")
+    #expect(questions.device == "Which device would you like to open?")
+  }
 }

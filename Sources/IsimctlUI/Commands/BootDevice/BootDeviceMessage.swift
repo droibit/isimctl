@@ -10,9 +10,7 @@ protocol BootDeviceMessaging: Sendable {
   func confirmBoot() -> Bool
 
   /// Shows a message indicating the device is being booted
-  ///
-  /// - Parameter device: The device option being booted
-  func showBootingDeviceMessage(for device: DeviceOption)
+  func showBootingDeviceMessage()
 
   /// Shows an alert when device boot is successful
   ///
@@ -38,7 +36,7 @@ struct BootDeviceMessage: BootDeviceMessaging {
     )
   }
 
-  func showBootingDeviceMessage(for device: DeviceOption) {
+  func showBootingDeviceMessage() {
     noora.passthrough("Booting the device ...\n")
   }
 

@@ -1,33 +1,38 @@
 import SimctlKit
 import SimctlKitMocks
+import SimulatorKit
+import SimulatorKitMocks
 import Testing
 @testable import IsimctlUI
 @testable import IsimctlUIMocks
 
-struct BootDeviceCommandTests {
+struct OpenDeviceCommandTests {
   private let simctl: SimctlableMock
+  private let openSimulator: SimulatorOpenableMock
   private let deviceSelectionPrompt: DeviceSelectionPromptingMock
-  private let bootDeviceMessage: BootDeviceMessagingMock
-  private let simctlErrorAlert: SimctlErrorAlertingMock
-  private let command: BootDeviceCommand
+  private let openDeviceMessage: OpenDeviceMessagingMock
+  private let openSimulatorErrorAlert: OpenSimulatorErrorAlertingMock
+  private let command: OpenDeviceCommand
 
   init() {
     simctl = SimctlableMock()
+    openSimulator = SimulatorOpenableMock()
     deviceSelectionPrompt = DeviceSelectionPromptingMock()
-    bootDeviceMessage = BootDeviceMessagingMock()
-    simctlErrorAlert = SimctlErrorAlertingMock()
-    command = BootDeviceCommand(
+    openDeviceMessage = OpenDeviceMessagingMock()
+    openSimulatorErrorAlert = OpenSimulatorErrorAlertingMock()
+    command = OpenDeviceCommand(
       simctl: simctl,
+      openSimulator: openSimulator,
       deviceSelectionPrompt: deviceSelectionPrompt,
-      bootDeviceMessage: bootDeviceMessage,
-      simctlErrorAlert: simctlErrorAlert,
+      openDeviceMessage: openDeviceMessage,
+      openSimulatorErrorAlert: openSimulatorErrorAlert,
     )
   }
 
   // MARK: - Normal Cases
 
   @Test
-  func run_shouldBootDeviceSuccessfullyWhenDevicesExist() async throws {
+  func run_shouldOpenDeviceSuccessfullyWhenDevicesExist() async throws {
     // Given: Multiple shutdown devices exist
     let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
     let device2 = Device.stub(name: "iPhone 16", state: "Shutdown")
@@ -45,7 +50,7 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device1)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in }
+    openSimulator.openHandler = { _ in }
 
     // When
     try await command.run()
@@ -66,24 +71,24 @@ struct BootDeviceCommandTests {
       [DeviceOption(device2), DeviceOption(device1)],
     ])
 
-    // Then: Booting message is shown
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
+    // Then: Opening message is shown
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 1)
 
-    // Then: bootDevice is called with correct UDID
-    #expect(simctl.bootDeviceArgValues == [device1.udid])
+    // Then: openSimulator is called with correct UDID
+    #expect(openSimulator.openArgValues == [device1.udid])
 
     // Then: Success alert is shown
-    #expect(bootDeviceMessage.showBootSuccessAlertArgValues == [selectedDevice])
+    #expect(openDeviceMessage.showOpenSuccessAlertArgValues == [selectedDevice])
 
     // Then: No error alert is shown
-    #expect(simctlErrorAlert.showCallCount == 0)
-    #expect(bootDeviceMessage.showNoBootableDevicesAlertCallCount == 0)
+    #expect(openSimulatorErrorAlert.showCallCount == 0)
+    #expect(openDeviceMessage.showNoOpenableDevicesAlertCallCount == 0)
   }
 
   // MARK: - Edge Cases: Empty Data
 
   @Test
-  func run_shouldShowNoBootableDevicesAlertWhenNoShutdownDevices() async throws {
+  func run_shouldShowNoOpenableDevicesAlertWhenNoShutdownDevices() async throws {
     // Given: No shutdown devices exist (all devices are booted or unavailable)
     let simulators = SimulatorList.stub(runtimes: [])
     simctl.listDevicesHandler = { _ in simulators }
@@ -91,45 +96,47 @@ struct BootDeviceCommandTests {
     // When
     try await command.run()
 
-    // Then: No bootable devices alert is shown
-    #expect(bootDeviceMessage.showNoBootableDevicesAlertCallCount == 1)
+    // Then: No openable devices alert is shown
+    #expect(openDeviceMessage.showNoOpenableDevicesAlertCallCount == 1)
 
     // Then: Runtime and device selection are not called
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 0)
     #expect(deviceSelectionPrompt.selectDeviceCallCount == 0)
 
-    // Then: Boot process is not executed
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 0)
-    #expect(simctl.bootDeviceCallCount == 0)
-    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
+    // Then: Open process is not executed
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 0)
+    #expect(openSimulator.openCallCount == 0)
+    #expect(openDeviceMessage.showOpenSuccessAlertCallCount == 0)
   }
 
   // MARK: - Error Handling
 
   @Test
-  func run_shouldShowErrorAlertWhenListDevicesThrowsSimctlError() async throws {
+  func run_shouldRethrowWhenListDevicesThrowsSimctlError() async throws {
     // Given: simctl.listDevices throws SimctlError
     simctl.listDevicesHandler = { _ in
       throw SimctlError.xcrunNotFound
     }
 
-    // When
-    try await command.run()
+    // When/Then: Error is rethrown (SimctlError is not caught by OpenDeviceCommand)
+    await #expect(throws: SimctlError.self) {
+      try await command.run()
+    }
 
-    // Then: Error alert is shown
-    #expect(simctlErrorAlert.showArgValues == [.xcrunNotFound])
+    // Then: Error alert is NOT called
+    #expect(openSimulatorErrorAlert.showCallCount == 0)
 
     // Then: No other UI components are called
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 0)
     #expect(deviceSelectionPrompt.selectDeviceCallCount == 0)
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 0)
-    #expect(simctl.bootDeviceCallCount == 0)
-    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 0)
+    #expect(openSimulator.openCallCount == 0)
+    #expect(openDeviceMessage.showOpenSuccessAlertCallCount == 0)
   }
 
   @Test
-  func run_shouldRethrowWhenListDevicesThrowsNonSimctlError() async throws {
-    // Given: simctl.listDevices throws non-SimctlError
+  func run_shouldRethrowWhenListDevicesThrowsError() async throws {
+    // Given: simctl.listDevices throws error
     simctl.listDevicesHandler = { _ in
       throw CancellationError()
     }
@@ -140,12 +147,12 @@ struct BootDeviceCommandTests {
     }
 
     // Then: Error alert is NOT called
-    #expect(simctlErrorAlert.showCallCount == 0)
+    #expect(openSimulatorErrorAlert.showCallCount == 0)
   }
 
   @Test
-  func run_shouldShowErrorAlertWhenBootDeviceThrowsSimctlError() async throws {
-    // Given: bootDevice throws SimctlError (e.g., device already booted)
+  func run_shouldShowErrorAlertWhenOpenSimulatorThrowsOpenSimulatorError() async throws {
+    // Given: openSimulator throws OpenSimulatorError
     let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
     let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device1]),
@@ -161,11 +168,11 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device1)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    let expectedError = SimctlError.commandFailed(
-      command: "xcrun simctl boot \(device1.udid)",
-      description: "Unable to boot device in current state: Booted",
+    let expectedError = OpenSimulatorError(
+      command: "open -a \"Simulator\"",
+      description: "Command execution failed with exit code 1",
     )
-    simctl.bootDeviceHandler = { _ in
+    openSimulator.openHandler = { _ in
       throw expectedError
     }
 
@@ -173,16 +180,16 @@ struct BootDeviceCommandTests {
     try await command.run()
 
     // Then: Error alert is shown
-    #expect(simctlErrorAlert.showArgValues == [expectedError])
-    // Then: Booting message is shown (before error occurs)
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
+    #expect(openSimulatorErrorAlert.showArgValues == [expectedError])
+    // Then: Opening message is shown (before error occurs)
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 1)
     // Then: Success alert is NOT shown
-    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
+    #expect(openDeviceMessage.showOpenSuccessAlertCallCount == 0)
   }
 
   @Test
-  func run_shouldRethrowWhenBootDeviceThrowsNonSimctlError() async throws {
-    // Given: bootDevice throws non-SimctlError
+  func run_shouldRethrowWhenOpenSimulatorThrowsNonOpenSimulatorError() async throws {
+    // Given: openSimulator throws non-OpenSimulatorError
     let device1 = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
     let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device1]),
@@ -198,7 +205,7 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device1)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in
+    openSimulator.openHandler = { _ in
       throw CancellationError()
     }
 
@@ -208,14 +215,14 @@ struct BootDeviceCommandTests {
     }
 
     // Then: Error alert is NOT called
-    #expect(simctlErrorAlert.showCallCount == 0)
+    #expect(openSimulatorErrorAlert.showCallCount == 0)
   }
 
   // MARK: - Confirmation Feature
 
   @Test
-  func run_shouldBootDeviceWhenConfirmationIsAccepted() async throws {
-    // Given: A device exists and user confirms the boot
+  func run_shouldOpenDeviceWhenConfirmationIsAccepted() async throws {
+    // Given: A device exists and user confirms the open
     let device = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
     let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device]),
@@ -231,24 +238,24 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    bootDeviceMessage.confirmBootHandler = { true }
-    simctl.bootDeviceHandler = { _ in }
+    openDeviceMessage.confirmOpenHandler = { true }
+    openSimulator.openHandler = { _ in }
 
     // When: shouldConfirm is true
     try await command.run(shouldConfirm: true)
 
     // Then: Confirmation is requested
-    #expect(bootDeviceMessage.confirmBootCallCount == 1)
+    #expect(openDeviceMessage.confirmOpenCallCount == 1)
 
-    // Then: Boot process is executed
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
-    #expect(simctl.bootDeviceArgValues == [device.udid])
-    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
+    // Then: Open process is executed
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 1)
+    #expect(openSimulator.openArgValues == [device.udid])
+    #expect(openDeviceMessage.showOpenSuccessAlertCallCount == 1)
   }
 
   @Test
-  func run_shouldNotBootDeviceWhenConfirmationIsRejected() async throws {
-    // Given: A device exists and user rejects the boot
+  func run_shouldNotOpenDeviceWhenConfirmationIsRejected() async throws {
+    // Given: A device exists and user rejects the open
     let device = Device.stub(name: "iPhone 16 Pro", state: "Shutdown")
     let simulators = SimulatorList.stub(runtimes: [
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device]),
@@ -264,18 +271,18 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    bootDeviceMessage.confirmBootHandler = { false }
+    openDeviceMessage.confirmOpenHandler = { false }
 
     // When: shouldConfirm is true
     try await command.run(shouldConfirm: true)
 
     // Then: Confirmation is requested
-    #expect(bootDeviceMessage.confirmBootCallCount == 1)
+    #expect(openDeviceMessage.confirmOpenCallCount == 1)
 
-    // Then: Boot process is NOT executed
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 0)
-    #expect(simctl.bootDeviceCallCount == 0)
-    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
+    // Then: Open process is NOT executed
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 0)
+    #expect(openSimulator.openCallCount == 0)
+    #expect(openDeviceMessage.showOpenSuccessAlertCallCount == 0)
   }
 
   @Test
@@ -296,18 +303,17 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in }
+    openSimulator.openHandler = { _ in }
 
     // When: shouldConfirm is false (default behavior)
     try await command.run(shouldConfirm: false)
 
     // Then: Confirmation is NOT requested
-    #expect(bootDeviceMessage.confirmBootCallCount == 0)
-
-    // Then: Boot process is executed directly
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
-    #expect(simctl.bootDeviceArgValues == [device.udid])
-    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
+    #expect(openDeviceMessage.confirmOpenCallCount == 0)
+    // Then: Open process is executed directly
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 1)
+    #expect(openSimulator.openArgValues == [device.udid])
+    #expect(openDeviceMessage.showOpenSuccessAlertCallCount == 1)
   }
 
   // MARK: - Additional Test Cases
@@ -333,7 +339,7 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device2)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in }
+    openSimulator.openHandler = { _ in }
 
     // When
     try await command.run()
@@ -345,6 +351,7 @@ struct BootDeviceCommandTests {
       RuntimeDeviceGroupOption(runtime: "iOS 18.2", devices: [device2, device1]),
       RuntimeDeviceGroupOption(runtime: "iPadOS 18.2", devices: [device3]),
     ])
+
     // Then: Device options are sorted alphabetically
     #expect(deviceSelectionPrompt.selectDeviceArgValues == [
       [DeviceOption(device2), DeviceOption(device1)],
@@ -352,10 +359,10 @@ struct BootDeviceCommandTests {
     // Then: Components are called in correct order
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 1)
     #expect(deviceSelectionPrompt.selectDeviceCallCount == 1)
-    #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
-    #expect(simctl.bootDeviceCallCount == 1)
-    #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
-    // Then: Boot is called with selected device's UDID
-    #expect(simctl.bootDeviceArgValues == ["udid-2"])
+    #expect(openDeviceMessage.showOpeningDeviceMessageCallCount == 1)
+    #expect(openSimulator.openCallCount == 1)
+    #expect(openDeviceMessage.showOpenSuccessAlertCallCount == 1)
+    // Then: Open is called with selected device's UDID
+    #expect(openSimulator.openArgValues == ["udid-2"])
   }
 }
