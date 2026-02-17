@@ -1,5 +1,5 @@
-public import Subprocess
 import Foundation
+import Subprocess
 
 /// Protocol for executing command-line tools
 /// @mockable
@@ -19,7 +19,7 @@ public protocol Executing: Sendable {
   /// - Throws:
   ///   - `ExecutionError` if command execution fails or returns a non-zero exit code
   ///   - `CancellationError` if the task is cancelled during execution
-  func captureOutput(arguments: Arguments) async throws -> String
+  func captureOutput(_ arguments: [String]) async throws -> String
 
   /// Executes a command without capturing output
   ///
@@ -30,15 +30,18 @@ public protocol Executing: Sendable {
   /// - Throws:
   ///   - `ExecutionError` if command execution fails or returns a non-zero exit code
   ///   - `CancellationError` if the task is cancelled during execution
-  func execute(arguments: Arguments) async throws
+  func execute(_ arguments: [String]) async throws
 }
 
 /// Implementation of ``Executing`` using Subprocess
 public struct Executor: Executing {
   private let executable: Executable
 
-  public init(executable: Executable) {
-    self.executable = executable
+  /// Creates an executor for the specified command-line tool.
+  ///
+  /// - Parameter name: The name of the executable (e.g., "xcrun", "open")
+  public init(name: String) {
+    executable = .name(name)
   }
 
   public func isExecutableAvailable() -> Bool {
@@ -50,14 +53,14 @@ public struct Executor: Executing {
     }
   }
 
-  public func captureOutput(arguments: Arguments) async throws -> String {
+  public func captureOutput(_ arguments: [String]) async throws -> String {
     let result: CollectedResult<StringOutput<Unicode.UTF8>, StringOutput<Unicode.UTF8>>
     do {
       // Set reasonable limits: 10MB for output, 1MB for error messages
       // xcrun simctl output is typically < 1MB, but allow headroom for large device lists
       result = try await Subprocess.run(
         executable,
-        arguments: arguments,
+        arguments: Arguments(arguments),
         output: .string(limit: 10 * 1024 * 1024),
         error: .string(limit: 1024 * 1024),
       )
@@ -66,23 +69,26 @@ public struct Executor: Executing {
         throw error
       }
       throw ExecutionError(
-        command: "\(executable) \(arguments)",
+        command: .init(executable: executable.description, arguments: arguments),
         description: error.localizedDescription,
       )
     }
 
     guard result.terminationStatus.isSuccess else {
-      throw ExecutionError(command: "\(executable) \(arguments)", from: result)
+      throw ExecutionError(
+        command: .init(executable: executable.description, arguments: arguments),
+        result: result,
+      )
     }
     return result.standardOutput ?? ""
   }
 
-  public func execute(arguments: Arguments) async throws {
+  public func execute(_ arguments: [String]) async throws {
     let result: CollectedResult<DiscardedOutput, StringOutput<Unicode.UTF8>>
     do {
       result = try await Subprocess.run(
         executable,
-        arguments: arguments,
+        arguments: Arguments(arguments),
         output: .discarded,
         error: .string(limit: 1024 * 1024),
       )
@@ -91,13 +97,16 @@ public struct Executor: Executing {
         throw error
       }
       throw ExecutionError(
-        command: "\(executable) \(arguments)",
+        command: .init(executable: executable.description, arguments: arguments),
         description: error.localizedDescription,
       )
     }
 
     if !result.terminationStatus.isSuccess {
-      throw ExecutionError(command: "\(executable) \(arguments)", from: result)
+      throw ExecutionError(
+        command: .init(executable: executable.description, arguments: arguments),
+        result: result,
+      )
     }
   }
 }

@@ -35,7 +35,7 @@ extension SimctlError {
   ///
   /// ```swift
   /// do {
-  ///   try await xcrun.execute(arguments: arguments)
+  ///   try await xcrun.execute(arguments)
   /// } catch let error as ExecutionError {
   ///   throw SimctlError.commandFailed(error: error)
   /// }

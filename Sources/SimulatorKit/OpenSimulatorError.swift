@@ -37,7 +37,7 @@ extension OpenSimulatorError {
   ///
   /// ```swift
   /// do {
-  ///   try await open.execute(arguments: arguments)
+  ///   try await open.execute(arguments)
   /// } catch let error as ExecutionError {
   ///   throw OpenSimulatorError(error)
   /// }

@@ -1,5 +1,4 @@
 import Foundation
-import Subprocess
 import SubprocessKit
 
 /// Protocol for executing `xcrun simctl` commands
@@ -25,7 +24,7 @@ public struct Simctl: Simctlable, Sendable {
   private let xcrun: any Executing
 
   public init() {
-    self.init(xcrun: Executor(executable: .name("xcrun")))
+    self.init(xcrun: Executor(name: "xcrun"))
   }
 
   init(xcrun: any Executing) {
@@ -43,7 +42,7 @@ public struct Simctl: Simctlable, Sendable {
         arguments.append(term)
       }
       arguments.append("--json")
-      let output = try await xcrun.captureOutput(arguments: Arguments(arguments))
+      let output = try await xcrun.captureOutput(arguments)
       return try JSONDecoder().decode(SimulatorList.self, from: output.data(using: .utf8)!)
     } catch let error as ExecutionError {
       throw SimctlError.commandFailed(error: error)
@@ -64,7 +63,7 @@ public struct Simctl: Simctlable, Sendable {
 
     do {
       let arguments = ["simctl", "boot", udid]
-      try await xcrun.execute(arguments: Arguments(arguments))
+      try await xcrun.execute(arguments)
     } catch let error as ExecutionError {
       throw SimctlError.commandFailed(error: error)
     }

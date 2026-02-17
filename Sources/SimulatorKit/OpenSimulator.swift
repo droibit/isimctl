@@ -1,5 +1,4 @@
 import Foundation
-import Subprocess
 import SubprocessKit
 
 /// Protocol for opening Simulator.app
@@ -17,7 +16,7 @@ public struct OpenSimulator: SimulatorOpenable {
   private let open: any Executing
 
   public init() {
-    self.init(open: Executor(executable: .name("open")))
+    self.init(open: Executor(name: "open"))
   }
 
   init(open: any Executing) {
@@ -25,13 +24,13 @@ public struct OpenSimulator: SimulatorOpenable {
   }
 
   public func open(udid: String?) async throws {
-    var arguments = ["-a", "\"Simulator\""]
+    var arguments = ["-a", "Simulator"]
     if let udid {
       arguments.append(contentsOf: ["--args", "-CurrentDeviceUDID", udid])
     }
 
     do {
-      try await open.execute(arguments: Arguments(arguments))
+      try await open.execute(arguments)
     } catch let error as ExecutionError {
       throw OpenSimulatorError(error)
     }

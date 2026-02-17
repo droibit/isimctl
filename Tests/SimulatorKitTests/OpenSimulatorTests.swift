@@ -1,5 +1,4 @@
 import Foundation
-import Subprocess
 import Testing
 @testable import SimulatorKit
 @testable import SimulatorKitMocks
@@ -26,7 +25,7 @@ struct OpenSimulatorTests {
     try await openSimulator.open(udid: nil)
 
     // Then: Verify runner was called with correct arguments
-    #expect(open.executeArgValues == [Arguments(["-a", "\"Simulator\""])])
+    #expect(open.executeArgValues == [["-a", "Simulator"]])
   }
 
   @Test
@@ -38,7 +37,7 @@ struct OpenSimulatorTests {
     try await openSimulator.open(udid: "test-udid-123")
 
     // Then: Verify runner was called with correct arguments
-    #expect(open.executeArgValues == [Arguments(["-a", "\"Simulator\"", "--args", "-CurrentDeviceUDID", "test-udid-123"])])
+    #expect(open.executeArgValues == [["-a", "Simulator", "--args", "-CurrentDeviceUDID", "test-udid-123"]])
   }
 
   // MARK: - Error Handling

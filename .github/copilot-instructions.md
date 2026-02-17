@@ -11,7 +11,7 @@ The name `isimctl` is derived from "interactive simctl".
 
 While `isimctl` provides comprehensive simulator management capabilities, the codebase maintains clear architectural boundaries:
 
-- **SubprocessKit** (Infrastructure Layer): Provides subprocess execution abstraction with `Executing` protocol. Wraps swift-subprocess and provides convenience methods for running commands with output capture or execution-only modes. This layer is reusable across different command-line tool wrappers.
+- **SubprocessKit** (Infrastructure Layer): Provides subprocess execution abstraction with `Executing` protocol. Encapsulates swift-subprocess package and exposes a clean public interface using standard Swift types (String, [String]). This layer is reusable across different command-line tool wrappers without exposing underlying implementation details.
 - **SimulatorKit** (macOS Integration Layer): Wraps macOS-specific simulator operations such as opening Simulator.app using the `open` command. Built on SubprocessKit for process execution.
 - **SimctlKit** (Core Layer): Strictly wraps `xcrun simctl` commands only. This layer remains a pure simctl wrapper, built on SubprocessKit for process execution.
 - **IsimctlUI** (UI Layer): Handles interactive terminal UI and orchestrates operations, delegating to SimulatorKit for macOS-specific operations and SimctlKit for simctl commands.
@@ -149,7 +149,7 @@ SimulatorKit (macOS Integration) | SimctlKit (Core Layer)
 
 **5. SubprocessKit** (Library Target)
 
-- **Responsibility**: Subprocess execution abstraction wrapping swift-subprocess package. Provides a mockable interface for running external processes with `Executing` protocol and `ExecutionError` for unified error handling.
+- **Responsibility**: Subprocess execution abstraction wrapping swift-subprocess package. Provides a mockable interface using standard Swift types with `Executing` protocol and `ExecutionError` for unified error handling. The swift-subprocess types (Executable, Arguments) are internal implementation details not exposed in the public API.
 - **Location**: `Sources/SubprocessKit/`
 - **When to use**:
   - When adding subprocess execution functionality
@@ -220,7 +220,7 @@ struct DeviceTable: DeviceTableDisplaying {
 **When to create a protocol:**
 - Component needs mocking for testing
 - Component is a public API in SimctlKit
-- Component wraps external dependencies (Noora, Subprocess)
+- Component wraps external dependencies (Noora, or provides abstraction over system tools)
 
 **Dependency Injection Pattern**
 

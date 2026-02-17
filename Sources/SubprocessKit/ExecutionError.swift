@@ -11,7 +11,7 @@ import Subprocess
 ///
 /// ```swift
 /// do {
-///   try await executor.execute(arguments: [])
+///   try await executor.execute([])
 /// } catch let error as ExecutionError {
 ///   print(error.command)      // "false"
 ///   print(error.description)  // Exit status details
@@ -37,7 +37,7 @@ public struct ExecutionError: Equatable, LocalizedError {
   /// - Parameters:
   ///   - command: The command that failed (executable and arguments)
   ///   - description: Description of why the command failed
-  public init(command: String, description: String) {
+  init(command: String, description: String) {
     self.command = command
     self.description = description
   }
@@ -48,19 +48,37 @@ public struct ExecutionError: Equatable, LocalizedError {
 }
 
 extension ExecutionError {
-  init(
-    command: String,
-    from result: CollectedResult<StringOutput<Unicode.UTF8>, StringOutput<Unicode.UTF8>>,
-  ) {
-    let description = result.standardError ?? result.standardOutput ?? result.terminationStatus.description
-    self.init(command: command, description: description)
+  /// Represents a command invocation with an executable and arguments
+  struct Invocation: Sendable, Equatable {
+    let executable: String
+    let arguments: [String]
+
+    /// Command string representation
+    var description: String {
+      "\(executable) \(arguments.joined(separator: " "))"
+    }
   }
 
+  /// Creates a new command execution error from a command invocation
+  init(command: Invocation, description: String) {
+    self.init(command: command.description, description: description)
+  }
+
+  /// Creates a new command execution error from a command invocation and a subprocess result with string output
   init(
-    command: String,
-    from result: CollectedResult<DiscardedOutput, StringOutput<Unicode.UTF8>>,
+    command: Invocation,
+    result: CollectedResult<StringOutput<Unicode.UTF8>, StringOutput<Unicode.UTF8>>,
+  ) {
+    let description = result.standardError ?? result.standardOutput ?? result.terminationStatus.description
+    self.init(command: command.description, description: description)
+  }
+
+  /// Creates a new command execution error from a command invocation and a subprocess result with discarded output
+  init(
+    command: Invocation,
+    result: CollectedResult<DiscardedOutput, StringOutput<Unicode.UTF8>>,
   ) {
     let description = result.standardError ?? result.terminationStatus.description
-    self.init(command: command, description: description)
+    self.init(command: command.description, description: description)
   }
 }

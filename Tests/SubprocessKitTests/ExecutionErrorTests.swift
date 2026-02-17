@@ -2,13 +2,15 @@ import Testing
 @testable import Subprocess
 @testable import SubprocessKit
 
+private typealias Invocation = ExecutionError.Invocation
+
 struct ExecutionErrorTests {
   // MARK: - StringOutput Initializer Tests
 
   @Test
   func initFromStringOutputResult_shouldUseStandardErrorWhenAvailable() {
     // Given
-    let command = "xcrun simctl list"
+    let command = Invocation(executable: "xcrun", arguments: ["simctl", "list"])
     let standardError = "Error: Invalid JSON"
     let standardOutput = "Some output"
     let result = makeStringOutputResult(
@@ -18,17 +20,17 @@ struct ExecutionErrorTests {
     )
 
     // When
-    let error = ExecutionError(command: command, from: result)
+    let error = ExecutionError(command: command, result: result)
 
     // Then
-    #expect(error.command == command)
+    #expect(error.command == "xcrun simctl list")
     #expect(error.description == standardError)
   }
 
   @Test
   func initFromStringOutputResult_shouldUseStandardOutputWhenStandardErrorIsNil() {
     // Given
-    let command = "xcrun simctl list"
+    let command = Invocation(executable: "xcrun", arguments: ["simctl", "list"])
     let standardOutput = "Output message"
     let result = makeStringOutputResult(
       standardOutput: standardOutput,
@@ -37,17 +39,17 @@ struct ExecutionErrorTests {
     )
 
     // When
-    let error = ExecutionError(command: command, from: result)
+    let error = ExecutionError(command: command, result: result)
 
     // Then
-    #expect(error.command == command)
+    #expect(error.command == "xcrun simctl list")
     #expect(error.description == standardOutput)
   }
 
   @Test
   func initFromStringOutputResult_shouldUseTerminationStatusWhenBothOutputsAreNil() {
     // Given
-    let command = "xcrun simctl list"
+    let command = Invocation(executable: "xcrun", arguments: ["simctl", "list"])
     let terminationStatus = TerminationStatus.failure
     let result = makeStringOutputResult(
       standardOutput: nil,
@@ -56,10 +58,10 @@ struct ExecutionErrorTests {
     )
 
     // When
-    let error = ExecutionError(command: command, from: result)
+    let error = ExecutionError(command: command, result: result)
 
     // Then
-    #expect(error.command == command)
+    #expect(error.command == "xcrun simctl list")
     #expect(error.description == terminationStatus.description)
   }
 
@@ -68,7 +70,7 @@ struct ExecutionErrorTests {
   @Test
   func initFromDiscardedOutputResult_shouldUseStandardErrorWhenAvailable() {
     // Given
-    let command = "open -a Simulator"
+    let command = Invocation(executable: "open", arguments: ["-a", "Simulator"])
     let standardError = "Error: Application not found"
     let result = makeDiscardedOutputResult(
       standardError: standardError,
@@ -76,17 +78,17 @@ struct ExecutionErrorTests {
     )
 
     // When
-    let error = ExecutionError(command: command, from: result)
+    let error = ExecutionError(command: command, result: result)
 
     // Then
-    #expect(error.command == command)
+    #expect(error.command == "open -a Simulator")
     #expect(error.description == standardError)
   }
 
   @Test
   func initFromDiscardedOutputResult_shouldUseTerminationStatusWhenStandardErrorIsNil() {
     // Given
-    let command = "open -a Simulator"
+    let command = Invocation(executable: "open", arguments: ["-a", "Simulator"])
     let terminationStatus = TerminationStatus.exited(127)
     let result = makeDiscardedOutputResult(
       standardError: nil,
@@ -94,10 +96,10 @@ struct ExecutionErrorTests {
     )
 
     // When
-    let error = ExecutionError(command: command, from: result)
+    let error = ExecutionError(command: command, result: result)
 
     // Then
-    #expect(error.command == command)
+    #expect(error.command == "open -a Simulator")
     #expect(error.description == terminationStatus.description)
   }
 

@@ -1,5 +1,4 @@
 import Foundation
-import Subprocess
 import Testing
 @testable import SimctlKit
 @testable import SimctlKitMocks
@@ -57,7 +56,7 @@ struct SimctlTests {
     }
 
     _ = try await simctl.listDevices(searchTerm: .booted)
-    #expect(xcrun.captureOutputArgValues == [Arguments(["simctl", "list", "devices", "booted", "--json"])])
+    #expect(xcrun.captureOutputArgValues == [["simctl", "list", "devices", "booted", "--json"]])
   }
 
   @Test
@@ -72,7 +71,7 @@ struct SimctlTests {
     }
 
     _ = try await simctl.listDevices(searchTerm: nil)
-    #expect(xcrun.captureOutputArgValues == [Arguments(["simctl", "list", "devices", "--json"])])
+    #expect(xcrun.captureOutputArgValues == [["simctl", "list", "devices", "--json"]])
   }
 
   @Test
@@ -169,7 +168,7 @@ struct SimctlTests {
     try await simctl.bootDevice(udid: "test-udid-123")
 
     // Then: Verify runner was called with correct arguments
-    #expect(xcrun.executeArgValues == [Arguments(["simctl", "boot", "test-udid-123"])])
+    #expect(xcrun.executeArgValues == [["simctl", "boot", "test-udid-123"]])
   }
 
   @Test
