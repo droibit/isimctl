@@ -9,6 +9,8 @@ enum DeviceSelectionPurpose: Sendable {
   case bootDevice
   /// Device selection for opening a device in Simulator.app
   case openDevice
+  /// Device selection for shutting down a device
+  case shutdownDevice
 
   /// Returns the question text for both runtime and device selection
   var questions: (runtime: String, device: String) {
@@ -27,6 +29,11 @@ enum DeviceSelectionPurpose: Sendable {
       (
         runtime: "Which runtime contains the device to open?",
         device: "Which device would you like to open?",
+      )
+    case .shutdownDevice:
+      (
+        runtime: "Which runtime contains the device to shutdown?",
+        device: "Which device would you like to shutdown?",
       )
     }
   }
