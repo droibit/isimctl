@@ -4,14 +4,14 @@ name: Code Quality - Lint & Format
 on:
   push:
     paths:
-      - '.github/workflows/lint.yml'
+      - '.github/workflows/lint-swift.yml'
       - '.swiftformat'
       - '.swiftlint.yml'
       - '**.swift'
       - 'Mintfile'
   pull_request:
     paths:
-      - '.github/workflows/lint.yml'
+      - '.github/workflows/lint-swift.yml'
       - '.swiftformat'
       - '.swiftlint.yml'
       - '**.swift'
@@ -24,7 +24,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.2.app
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: irgaly/setup-mint@v1
         with:
