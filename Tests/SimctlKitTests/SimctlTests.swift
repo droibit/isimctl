@@ -218,7 +218,7 @@ struct SimctlTests {
     xcrun.executeHandler = { _ in }
 
     // When: Shut down a device
-    try await simctl.shutdownDevice(udid: "test-udid-123")
+    try await simctl.shutdownDevice(.device(udid: "test-udid-123"))
 
     // Then: Verify runner was called with correct arguments
     #expect(xcrun.executeArgValues == [["simctl", "shutdown", "test-udid-123"]])
@@ -231,7 +231,7 @@ struct SimctlTests {
     xcrun.executeHandler = { _ in }
 
     // When: Shut down all devices
-    try await simctl.shutdownDevice(udid: "all")
+    try await simctl.shutdownDevice(.all)
 
     // Then: Verify runner was called with "all"
     #expect(xcrun.executeArgValues == [["simctl", "shutdown", "all"]])
@@ -245,7 +245,7 @@ struct SimctlTests {
     // When/Then: Expect xcrunNotFound error
     let expectedError = SimctlError.xcrunNotFound
     await #expect(throws: expectedError) {
-      try await simctl.shutdownDevice(udid: "test-udid")
+      try await simctl.shutdownDevice(.device(udid: "test-udid"))
     }
 
     // Then: Verify runner.execute was not called
@@ -268,7 +268,7 @@ struct SimctlTests {
     // When/Then: Expect commandFailed error
     let expectedError = SimctlError.commandFailed(error: runError)
     await #expect(throws: expectedError) {
-      try await simctl.shutdownDevice(udid: "test-udid")
+      try await simctl.shutdownDevice(.device(udid: "test-udid"))
     }
 
     // Then: Verify runner.execute was called once

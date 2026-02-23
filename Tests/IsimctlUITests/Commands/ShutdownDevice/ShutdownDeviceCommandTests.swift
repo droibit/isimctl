@@ -1,3 +1,4 @@
+// swiftlint:disable type_body_length file_length
 import SimctlKit
 import SimctlKitMocks
 import Testing
@@ -70,7 +71,7 @@ struct ShutdownDeviceCommandTests {
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
 
     // Then: shutdownDevice is called with correct UDID
-    #expect(simctl.shutdownDeviceArgValues == [device1.udid])
+    #expect(simctl.shutdownDeviceArgValues == [.device(udid: device1.udid)])
 
     // Then: Success alert is shown
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertArgValues == [selectedDevice])
@@ -100,8 +101,8 @@ struct ShutdownDeviceCommandTests {
     // Then: simctl.listDevices is called with .booted searchTerm
     #expect(simctl.listDevicesArgValues == [.booted])
 
-    // Then: shutdownDevice is called with "all"
-    #expect(simctl.shutdownDeviceArgValues == ["all"])
+    // Then: shutdownDevice is called with .all
+    #expect(simctl.shutdownDeviceArgValues == [.all])
 
     // Then: Shutting down message is shown
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
@@ -351,7 +352,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is executed
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
-    #expect(simctl.shutdownDeviceArgValues == [device.udid])
+    #expect(simctl.shutdownDeviceArgValues == [.device(udid: device.udid)])
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 1)
   }
 
@@ -415,7 +416,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is executed directly
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
-    #expect(simctl.shutdownDeviceArgValues == [device.udid])
+    #expect(simctl.shutdownDeviceArgValues == [.device(udid: device.udid)])
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 1)
   }
 }

@@ -60,20 +60,21 @@ public struct ShutdownDeviceCommand: Sendable {
   ///   - shouldConfirm: Whether to prompt for confirmation before shutting down. Defaults to false.
   public func run(allDevices: Bool = false, shouldConfirm: Bool = false) async throws {
     do {
-      let simulators = try await simctl.listDevices(searchTerm: .booted)
-      let bootedRuntimeOptions = simulators.toRuntimeDeviceGroupOptions(excludeEmpty: true)
-      guard !bootedRuntimeOptions.isEmpty else {
+      let simulators = try await simctl
+        .listDevices(searchTerm: .booted)
+        .filtering(state: .booted)
+      guard !simulators.devices.isEmpty else {
         shutdownDeviceMessage.showNoShuttableDevicesAlert()
         return
       }
 
       if allDevices {
         shutdownDeviceMessage.showShuttingDownDeviceMessage()
-        try await simctl.shutdownDevice(udid: "all")
+        try await simctl.shutdownDevice(.all)
         shutdownDeviceMessage.showShutdownAllSuccessAlert()
       } else {
         let selectedRuntime = deviceSelectionPrompt.selectRuntime(
-          from: bootedRuntimeOptions,
+          from: simulators.toRuntimeDeviceGroupOptions(),
           autoselectSingleChoice: false,
         )
         let selectedDevice = deviceSelectionPrompt.selectDevice(
@@ -87,7 +88,7 @@ public struct ShutdownDeviceCommand: Sendable {
         }
 
         shutdownDeviceMessage.showShuttingDownDeviceMessage()
-        try await simctl.shutdownDevice(udid: selectedDevice.device.udid)
+        try await simctl.shutdownDevice(.device(udid: selectedDevice.device.udid))
         shutdownDeviceMessage.showShutdownSuccessAlert(for: selectedDevice)
       }
     } catch {

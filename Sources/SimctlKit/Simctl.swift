@@ -18,12 +18,11 @@ public protocol Simctlable: Sendable {
   /// - Precondition: `udid` must not be empty
   func bootDevice(udid: String) async throws
 
-  /// Executes `xcrun simctl shutdown <udid>` to shut down a device
+  /// Executes `xcrun simctl shutdown <udid>` or `xcrun simctl shutdown all` to shut down a device or all devices
   ///
-  /// - Parameter udid: The unique device identifier, or `"all"` to shut down all running devices (must not be empty)
+  /// - Parameter target: The target to shut down: a specific device by UDID, or all running devices
   /// - Throws: ``SimctlError`` if command execution fails or xcrun is not available
-  /// - Precondition: `udid` must not be empty
-  func shutdownDevice(udid: String) async throws
+  func shutdownDevice(_ target: ShutdownTarget) async throws
 }
 
 /// Public interface for executing simctl commands
@@ -76,15 +75,16 @@ public struct Simctl: Simctlable, Sendable {
     }
   }
 
-  public func shutdownDevice(udid: String) async throws {
-    precondition(!udid.isEmpty, "udid must not be empty")
-
+  public func shutdownDevice(_ target: ShutdownTarget) async throws {
     guard xcrun.isExecutableAvailable() else {
       throw SimctlError.xcrunNotFound
     }
 
     do {
-      let arguments = ["simctl", "shutdown", udid]
+      let shutdownTarget = target.xcrunArgument
+      precondition(!shutdownTarget.isEmpty, "Shutdown target argument must not be empty")
+
+      let arguments = ["simctl", "shutdown", shutdownTarget]
       try await xcrun.execute(arguments)
     } catch let error as ExecutionError {
       throw SimctlError.commandFailed(error: error)
