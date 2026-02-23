@@ -2,9 +2,11 @@
     "files.trimTrailingWhitespaceInRegexAndStrings": false,
     "cSpell.words": [
         "isimctl",
+        "Mockolo",
         "Noora",
         "Simctl",
         "Simctlable",
+        "swiftformat",
         "udid",
         "Xcrun",
         "Xcrunnable"
