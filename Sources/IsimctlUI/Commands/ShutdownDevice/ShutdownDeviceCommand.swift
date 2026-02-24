@@ -60,10 +60,10 @@ public struct ShutdownDeviceCommand: Sendable {
   ///   - shouldConfirm: Whether to prompt for confirmation before shutting down. Defaults to false.
   public func run(allDevices: Bool = false, shouldConfirm: Bool = false) async throws {
     do {
-      let simulators = try await simctl
+      let runtimeOptions = try await simctl
         .listDevices(searchTerm: .booted)
-        .filtering(state: .booted)
-      guard !simulators.devices.isEmpty else {
+        .toRuntimeDeviceGroupOptions(filteringBy: .booted)
+      guard !runtimeOptions.isEmpty else {
         shutdownDeviceMessage.showNoShuttableDevicesAlert()
         return
       }
@@ -74,7 +74,7 @@ public struct ShutdownDeviceCommand: Sendable {
         shutdownDeviceMessage.showShutdownAllSuccessAlert()
       } else {
         let selectedRuntime = deviceSelectionPrompt.selectRuntime(
-          from: simulators.toRuntimeDeviceGroupOptions(),
+          from: runtimeOptions,
           autoselectSingleChoice: false,
         )
         let selectedDevice = deviceSelectionPrompt.selectDevice(

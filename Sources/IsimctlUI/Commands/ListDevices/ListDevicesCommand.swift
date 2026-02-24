@@ -117,7 +117,7 @@ public struct ListDevicesCommand: Sendable {
       }
       deviceTable.display(devicesWithRuntime)
     } else {
-      let runtimeOptions = simulators.toRuntimeDeviceGroupOptions(excludeEmpty: true)
+      let runtimeOptions = simulators.toRuntimeDeviceGroupOptions()
       guard !runtimeOptions.isEmpty else {
         deviceMessage.showNoDevicesFoundAlert()
         return

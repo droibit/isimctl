@@ -6,6 +6,10 @@ import SubprocessKit
 public protocol Simctlable: Sendable {
   /// Executes `xcrun simctl list devices --json` and returns parsed ``SimulatorList``
   ///
+  /// The returned ``SimulatorList`` maps runtime identifiers to their associated devices.
+  /// A runtime may be present in the result with an empty device array if no devices are
+  /// registered for that runtime or none match the given search term.
+  ///
   /// - Parameter searchTerm: Optional search term to filter devices
   /// - Returns: ``SimulatorList`` containing available devices
   /// - Throws: ``SimctlError`` if command execution fails or output is invalid

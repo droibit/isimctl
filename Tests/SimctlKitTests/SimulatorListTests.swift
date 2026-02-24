@@ -46,7 +46,7 @@ struct SimulatorListTests {
 
     // When: Filtering by shutdown state
     let result = simulatorList.filtering(state: .shutdown)
-    // Then: Only shutdown devices should be included, and runtimes with only booted devices should be excluded
+    // Then: Only shutdown devices should be included
     #expect(result.devices == [
       "com.apple.CoreSimulator.SimRuntime.iOS-18-1": [
         Device.stub(name: "iPhone 15", state: "Shutdown"),
@@ -101,20 +101,53 @@ struct SimulatorListTests {
     #expect(result.devices == devices)
   }
 
-  @Test(arguments: [
-    [:],
-    [
-      "com.apple.CoreSimulator.SimRuntime.iOS-18-1": [Device](),
-      "com.apple.CoreSimulator.SimRuntime.iOS-17-2": [Device](),
-    ],
-  ])
-  func filtering_shouldReturnEmptyWhenStartingWithEmptyList(devices: [String: [Device]]) {
-    // Given: An empty SimulatorList
+  @Test
+  func filtering_shouldPreserveRuntimeWithNoMatchingDevices() {
+    // Given: A SimulatorList with one runtime having no booted devices
+    let devices: [String: [Device]] = [
+      "com.apple.CoreSimulator.SimRuntime.iOS-18-1": [
+        Device.stub(name: "iPhone 16", state: "Booted"),
+      ],
+      "com.apple.CoreSimulator.SimRuntime.iOS-17-2": [
+        Device.stub(name: "iPhone 15", state: "Shutdown"),
+      ],
+    ]
     let simulatorList = SimulatorList(devices)
+
+    // When: Filtering by booted state
+    let result = simulatorList.filtering(state: .booted)
+    // Then: The runtime with no matching devices should be preserved with an empty device array
+    #expect(result.devices == [
+      "com.apple.CoreSimulator.SimRuntime.iOS-18-1": [
+        Device.stub(name: "iPhone 16", state: "Booted"),
+      ],
+      "com.apple.CoreSimulator.SimRuntime.iOS-17-2": [],
+    ])
+  }
+
+  @Test
+  func filtering_shouldReturnEmptyWhenDevicesDictionaryIsEmpty() {
+    // Given: A SimulatorList with no runtimes
+    let simulatorList = SimulatorList([:])
 
     // When: Filtering by any state
     let result = simulatorList.filtering(state: .booted)
     // Then: Result should remain empty
     #expect(result.devices.isEmpty)
+  }
+
+  @Test
+  func filtering_shouldPreserveRuntimesWithEmptyDeviceArrays() {
+    // Given: A SimulatorList with runtimes that have no devices registered
+    let devices: [String: [Device]] = [
+      "com.apple.CoreSimulator.SimRuntime.iOS-18-1": [],
+      "com.apple.CoreSimulator.SimRuntime.iOS-17-2": [],
+    ]
+    let simulatorList = SimulatorList(devices)
+
+    // When: Filtering by any state
+    let result = simulatorList.filtering(state: .booted)
+    // Then: Runtimes should be preserved with empty device arrays
+    #expect(result.devices == devices)
   }
 }

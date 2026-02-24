@@ -86,11 +86,12 @@ struct SimulatorListUITests {
 
   @Test
   func toRuntimeDeviceGroupOptions_shouldSortRuntimesAlphabetically() {
+    let device = Device(name: "iPhone 16", state: "Booted", udid: "device-1", deviceTypeIdentifier: "type-1")
     let simulatorList = SimulatorList([
-      "com.apple.CoreSimulator.SimRuntime.watchOS-26-2": [],
-      "com.apple.CoreSimulator.SimRuntime.iOS-26-2": [],
-      "com.apple.CoreSimulator.SimRuntime.tvOS-26-2": [],
-      "com.apple.CoreSimulator.SimRuntime.iOS-18-6": [],
+      "com.apple.CoreSimulator.SimRuntime.watchOS-26-2": [device],
+      "com.apple.CoreSimulator.SimRuntime.iOS-26-2": [device],
+      "com.apple.CoreSimulator.SimRuntime.tvOS-26-2": [device],
+      "com.apple.CoreSimulator.SimRuntime.iOS-18-6": [device],
     ])
 
     let result = simulatorList.toRuntimeDeviceGroupOptions()
@@ -148,25 +149,10 @@ struct SimulatorListUITests {
     #expect(result.isEmpty)
   }
 
-  @Test
-  func toRuntimeDeviceGroupOptions_shouldHandleEmptyDeviceArrays() {
-    let simulatorList = SimulatorList([
-      "com.apple.CoreSimulator.SimRuntime.iOS-26-2": [],
-      "com.apple.CoreSimulator.SimRuntime.watchOS-26-2": [],
-    ])
-
-    let result = simulatorList.toRuntimeDeviceGroupOptions()
-
-    #expect(result == [
-      RuntimeDeviceGroupOption(runtime: "iOS 26.2", devices: []),
-      RuntimeDeviceGroupOption(runtime: "watchOS 26.2", devices: []),
-    ])
-  }
-
-  // MARK: - toRuntimeDeviceGroupOptions with excludeEmpty tests
+  // MARK: - toRuntimeDeviceGroupOptions with empty runtimes tests
 
   @Test
-  func toRuntimeDeviceGroupOptions_shouldExcludeEmptyDeviceArraysWhenExcludeEmptyIsTrue() {
+  func toRuntimeDeviceGroupOptions_shouldExcludeEmptyRuntimesFromResult() {
     let devices = [
       Device(
         name: "iPhone 16",
@@ -181,7 +167,7 @@ struct SimulatorListUITests {
       "com.apple.CoreSimulator.SimRuntime.tvOS-26-2": [],
     ])
 
-    let result = simulatorList.toRuntimeDeviceGroupOptions(excludeEmpty: true)
+    let result = simulatorList.toRuntimeDeviceGroupOptions()
     #expect(result == [
       RuntimeDeviceGroupOption(
         runtime: "iOS 26.2",
@@ -191,7 +177,7 @@ struct SimulatorListUITests {
   }
 
   @Test
-  func toRuntimeDeviceGroupOptions_shouldKeepAllRuntimesWithDevicesWhenExcludeEmptyIsTrue() {
+  func toRuntimeDeviceGroupOptions_shouldKeepAllRuntimesWithDevices() {
     let iOSDevices = [
       Device(
         name: "iPhone 16",
@@ -214,7 +200,7 @@ struct SimulatorListUITests {
       "com.apple.CoreSimulator.SimRuntime.tvOS-26-2": [],
     ])
 
-    let result = simulatorList.toRuntimeDeviceGroupOptions(excludeEmpty: true)
+    let result = simulatorList.toRuntimeDeviceGroupOptions()
     #expect(result == [
       RuntimeDeviceGroupOption(
         runtime: "iOS 26.2",
@@ -228,13 +214,68 @@ struct SimulatorListUITests {
   }
 
   @Test
-  func toRuntimeDeviceGroupOptions_shouldReturnEmptyArrayWhenAllRuntimesAreEmptyAndExcludeEmptyIsTrue() {
+  func toRuntimeDeviceGroupOptions_shouldReturnEmptyArrayWhenAllRuntimesAreEmpty() {
     let simulatorList = SimulatorList([
       "com.apple.CoreSimulator.SimRuntime.iOS-26-2": [],
       "com.apple.CoreSimulator.SimRuntime.watchOS-26-2": [],
     ])
 
-    let result = simulatorList.toRuntimeDeviceGroupOptions(excludeEmpty: true)
+    let result = simulatorList.toRuntimeDeviceGroupOptions()
+    #expect(result.isEmpty)
+  }
+
+  // MARK: - toRuntimeDeviceGroupOptions with filteringBy tests
+
+  @Test
+  func toRuntimeDeviceGroupOptions_shouldFilterDevicesByStateWhenFilteringByIsProvided() {
+    // Given: A SimulatorList with a runtime containing both booted and shutdown devices
+    let bootedDevice = Device(name: "iPhone 16", state: "Booted", udid: "device-1", deviceTypeIdentifier: "type-1")
+    let shutdownDevice = Device(name: "iPhone 15", state: "Shutdown", udid: "device-2", deviceTypeIdentifier: "type-2")
+    let simulatorList = SimulatorList([
+      "com.apple.CoreSimulator.SimRuntime.iOS-26-2": [bootedDevice, shutdownDevice],
+    ])
+
+    // When: Converting with filteringBy .booted
+    let result = simulatorList.toRuntimeDeviceGroupOptions(filteringBy: .booted)
+
+    // Then: Only the booted device should be included
+    #expect(result == [
+      RuntimeDeviceGroupOption(runtime: "iOS 26.2", devices: [bootedDevice]),
+    ])
+  }
+
+  @Test
+  func toRuntimeDeviceGroupOptions_shouldExcludeRuntimesWithNoMatchingDevicesWhenFilteringByIsProvided() {
+    // Given: Multiple runtimes, only one has a device matching the filter state
+    let bootedDevice = Device(name: "iPhone 16", state: "Booted", udid: "ios-device-1", deviceTypeIdentifier: "type-1")
+    let shutdownDevice = Device(name: "Apple Watch Series 10", state: "Shutdown", udid: "watch-device-1", deviceTypeIdentifier: "type-2")
+    let simulatorList = SimulatorList([
+      "com.apple.CoreSimulator.SimRuntime.iOS-26-2": [bootedDevice],
+      "com.apple.CoreSimulator.SimRuntime.watchOS-26-2": [shutdownDevice],
+    ])
+
+    // When: Converting with filteringBy .booted
+    let result = simulatorList.toRuntimeDeviceGroupOptions(filteringBy: .booted)
+
+    // Then: Only the runtime with matching devices should be included
+    #expect(result == [
+      RuntimeDeviceGroupOption(runtime: "iOS 26.2", devices: [bootedDevice]),
+    ])
+  }
+
+  @Test
+  func toRuntimeDeviceGroupOptions_shouldReturnEmptyWhenNoDevicesMatchFilteringByState() {
+    // Given: A SimulatorList where no devices match the requested state
+    let simulatorList = SimulatorList([
+      "com.apple.CoreSimulator.SimRuntime.iOS-26-2": [
+        Device(name: "iPhone 16", state: "Shutdown", udid: "device-1", deviceTypeIdentifier: "type-1"),
+      ],
+    ])
+
+    // When: Converting with filteringBy .booted
+    let result = simulatorList.toRuntimeDeviceGroupOptions(filteringBy: .booted)
+
+    // Then: Result should be empty
     #expect(result.isEmpty)
   }
 }

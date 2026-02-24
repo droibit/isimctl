@@ -45,11 +45,14 @@ extension RuntimeDeviceGroupOption {
 extension SimulatorList {
   /// Converts the simulator list to runtime device group options sorted by runtime name
   ///
-  /// - Parameter excludeEmpty: If `true`, runtime groups with no devices are excluded from the result. Defaults to `false`.
+  /// Runtime groups with no devices are always excluded from the result.
+  ///
+  /// - Parameter state: If provided, only devices matching this state are included. Runtimes with no matching devices are excluded.
   /// - Returns: An array of ``RuntimeDeviceGroupOption`` objects sorted alphabetically by runtime
-  func toRuntimeDeviceGroupOptions(excludeEmpty: Bool = false) -> [RuntimeDeviceGroupOption] {
-    devices
-      .filter { !excludeEmpty || !$0.value.isEmpty }
+  func toRuntimeDeviceGroupOptions(filteringBy state: DeviceState? = nil) -> [RuntimeDeviceGroupOption] {
+    let source = state.map { filtering(state: $0) } ?? self
+    return source.devices
+      .filter { !$0.value.isEmpty }
       .map { runtimeId, devices in
         RuntimeDeviceGroupOption(
           runtime: RuntimeDeviceGroupOption.formatRuntime(runtimeId),

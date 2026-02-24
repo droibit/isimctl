@@ -18,8 +18,8 @@ public struct SimulatorList: Equatable, Codable, Sendable {
   /// Returns a new ``SimulatorList`` with devices filtered by the specified state.
   ///
   /// Filters devices by comparing their `state` property against the provided state
-  /// using case-insensitive comparison. Runtimes with no matching devices are excluded
-  /// from the result.
+  /// using case-insensitive comparison. Runtimes with no matching devices are preserved
+  /// with an empty device array.
   ///
   /// - Parameter state: The device state to filter by
   /// - Returns: A new ``SimulatorList`` containing only devices matching the specified state
@@ -30,7 +30,6 @@ public struct SimulatorList: Equatable, Codable, Sendable {
         device.state.caseInsensitiveCompare(stateValue) == .orderedSame
       }
     }
-    .filter { !$0.value.isEmpty }
 
     return Self(filteredDevices)
   }

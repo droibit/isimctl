@@ -59,16 +59,16 @@ public struct OpenDeviceCommand: Sendable {
   /// - Parameter shouldConfirm: Whether to prompt for confirmation before opening. Defaults to false.
   public func run(shouldConfirm: Bool = false) async throws {
     do {
-      let simulators = try await simctl
+      let runtimeOptions = try await simctl
         .listDevices(searchTerm: .available)
-        .filtering(state: .shutdown)
-      guard !simulators.devices.isEmpty else {
+        .toRuntimeDeviceGroupOptions(filteringBy: .shutdown)
+      guard !runtimeOptions.isEmpty else {
         openDeviceMessage.showNoOpenableDevicesAlert()
         return
       }
 
       let selectedRuntime = deviceSelectionPrompt.selectRuntime(
-        from: simulators.toRuntimeDeviceGroupOptions(),
+        from: runtimeOptions,
         autoselectSingleChoice: false,
       )
       let selectedDevice = deviceSelectionPrompt.selectDevice(
