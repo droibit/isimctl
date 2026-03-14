@@ -70,7 +70,7 @@ public struct ShutdownDeviceCommand: Sendable {
 
       if allDevices {
         shutdownDeviceMessage.showShuttingDownDeviceMessage()
-        try await simctl.shutdownDevice(.all)
+        try await simctl.shutdown(.all)
         shutdownDeviceMessage.showShutdownAllSuccessAlert()
       } else {
         let selectedRuntime = deviceSelectionPrompt.selectRuntime(
@@ -88,7 +88,7 @@ public struct ShutdownDeviceCommand: Sendable {
         }
 
         shutdownDeviceMessage.showShuttingDownDeviceMessage()
-        try await simctl.shutdownDevice(.device(udid: selectedDevice.device.udid))
+        try await simctl.shutdown(.device(udid: selectedDevice.device.udid))
         shutdownDeviceMessage.showShutdownSuccessAlert(for: selectedDevice)
       }
     } catch {

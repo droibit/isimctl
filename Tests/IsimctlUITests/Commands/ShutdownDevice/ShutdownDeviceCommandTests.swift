@@ -46,7 +46,7 @@ struct ShutdownDeviceCommandTests {
     let selectedDevice = DeviceOption(device1)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.shutdownDeviceHandler = { _ in }
+    simctl.shutdownHandler = { _ in }
 
     // When
     try await command.run()
@@ -71,7 +71,7 @@ struct ShutdownDeviceCommandTests {
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
 
     // Then: shutdownDevice is called with correct UDID
-    #expect(simctl.shutdownDeviceArgValues == [.device(udid: device1.udid)])
+    #expect(simctl.shutdownArgValues == [.device(udid: device1.udid)])
 
     // Then: Success alert is shown
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertArgValues == [selectedDevice])
@@ -93,7 +93,7 @@ struct ShutdownDeviceCommandTests {
       (id: "com.apple.CoreSimulator.SimRuntime.iOS-18-2", devices: [device1, device2]),
     ])
     simctl.listDevicesHandler = { _ in simulators }
-    simctl.shutdownDeviceHandler = { _ in }
+    simctl.shutdownHandler = { _ in }
 
     // When: allDevices is true
     try await command.run(allDevices: true)
@@ -102,7 +102,7 @@ struct ShutdownDeviceCommandTests {
     #expect(simctl.listDevicesArgValues == [.booted])
 
     // Then: shutdownDevice is called with .all
-    #expect(simctl.shutdownDeviceArgValues == [.all])
+    #expect(simctl.shutdownArgValues == [.all])
 
     // Then: Shutting down message is shown
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
@@ -140,7 +140,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is not executed
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 0)
-    #expect(simctl.shutdownDeviceCallCount == 0)
+    #expect(simctl.shutdownCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownAllSuccessAlertCallCount == 0)
   }
@@ -166,7 +166,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is not executed
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 0)
-    #expect(simctl.shutdownDeviceCallCount == 0)
+    #expect(simctl.shutdownCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownAllSuccessAlertCallCount == 0)
   }
@@ -185,7 +185,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is not executed
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 0)
-    #expect(simctl.shutdownDeviceCallCount == 0)
+    #expect(simctl.shutdownCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownAllSuccessAlertCallCount == 0)
   }
@@ -207,7 +207,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is not executed
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 0)
-    #expect(simctl.shutdownDeviceCallCount == 0)
+    #expect(simctl.shutdownCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownAllSuccessAlertCallCount == 0)
   }
@@ -231,7 +231,7 @@ struct ShutdownDeviceCommandTests {
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 0)
     #expect(deviceSelectionPrompt.selectDeviceCallCount == 0)
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 0)
-    #expect(simctl.shutdownDeviceCallCount == 0)
+    #expect(simctl.shutdownCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 0)
   }
 
@@ -273,7 +273,7 @@ struct ShutdownDeviceCommandTests {
       command: "xcrun simctl shutdown \(device.udid)",
       description: "Unable to shutdown device in current state: Shutdown",
     )
-    simctl.shutdownDeviceHandler = { _ in
+    simctl.shutdownHandler = { _ in
       throw expectedError
     }
 
@@ -308,7 +308,7 @@ struct ShutdownDeviceCommandTests {
     let selectedDevice = DeviceOption(device)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.shutdownDeviceHandler = { _ in
+    simctl.shutdownHandler = { _ in
       throw CancellationError()
     }
 
@@ -342,7 +342,7 @@ struct ShutdownDeviceCommandTests {
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
     shutdownDeviceMessage.confirmShutdownHandler = { true }
-    simctl.shutdownDeviceHandler = { _ in }
+    simctl.shutdownHandler = { _ in }
 
     // When: shouldConfirm is true
     try await command.run(shouldConfirm: true)
@@ -352,7 +352,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is executed
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
-    #expect(simctl.shutdownDeviceArgValues == [.device(udid: device.udid)])
+    #expect(simctl.shutdownArgValues == [.device(udid: device.udid)])
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 1)
   }
 
@@ -384,7 +384,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is NOT executed
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 0)
-    #expect(simctl.shutdownDeviceCallCount == 0)
+    #expect(simctl.shutdownCallCount == 0)
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 0)
   }
 
@@ -406,7 +406,7 @@ struct ShutdownDeviceCommandTests {
     let selectedDevice = DeviceOption(device)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.shutdownDeviceHandler = { _ in }
+    simctl.shutdownHandler = { _ in }
 
     // When: shouldConfirm is false (default behavior)
     try await command.run(shouldConfirm: false)
@@ -416,7 +416,7 @@ struct ShutdownDeviceCommandTests {
 
     // Then: Shutdown process is executed directly
     #expect(shutdownDeviceMessage.showShuttingDownDeviceMessageCallCount == 1)
-    #expect(simctl.shutdownDeviceArgValues == [.device(udid: device.udid)])
+    #expect(simctl.shutdownArgValues == [.device(udid: device.udid)])
     #expect(shutdownDeviceMessage.showShutdownSuccessAlertCallCount == 1)
   }
 }

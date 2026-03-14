@@ -45,7 +45,7 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device1)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in }
+    simctl.bootHandler = { _ in }
 
     // When
     try await command.run()
@@ -70,7 +70,7 @@ struct BootDeviceCommandTests {
     #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
 
     // Then: bootDevice is called with correct UDID
-    #expect(simctl.bootDeviceArgValues == [device1.udid])
+    #expect(simctl.bootArgValues == [device1.udid])
 
     // Then: Success alert is shown
     #expect(bootDeviceMessage.showBootSuccessAlertArgValues == [selectedDevice])
@@ -100,7 +100,7 @@ struct BootDeviceCommandTests {
 
     // Then: Boot process is not executed
     #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 0)
-    #expect(simctl.bootDeviceCallCount == 0)
+    #expect(simctl.bootCallCount == 0)
     #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
   }
 
@@ -123,7 +123,7 @@ struct BootDeviceCommandTests {
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 0)
     #expect(deviceSelectionPrompt.selectDeviceCallCount == 0)
     #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 0)
-    #expect(simctl.bootDeviceCallCount == 0)
+    #expect(simctl.bootCallCount == 0)
     #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
   }
 
@@ -165,7 +165,7 @@ struct BootDeviceCommandTests {
       command: "xcrun simctl boot \(device1.udid)",
       description: "Unable to boot device in current state: Booted",
     )
-    simctl.bootDeviceHandler = { _ in
+    simctl.bootHandler = { _ in
       throw expectedError
     }
 
@@ -198,7 +198,7 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device1)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in
+    simctl.bootHandler = { _ in
       throw CancellationError()
     }
 
@@ -232,7 +232,7 @@ struct BootDeviceCommandTests {
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
     bootDeviceMessage.confirmBootHandler = { true }
-    simctl.bootDeviceHandler = { _ in }
+    simctl.bootHandler = { _ in }
 
     // When: shouldConfirm is true
     try await command.run(shouldConfirm: true)
@@ -242,7 +242,7 @@ struct BootDeviceCommandTests {
 
     // Then: Boot process is executed
     #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
-    #expect(simctl.bootDeviceArgValues == [device.udid])
+    #expect(simctl.bootArgValues == [device.udid])
     #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
   }
 
@@ -274,7 +274,7 @@ struct BootDeviceCommandTests {
 
     // Then: Boot process is NOT executed
     #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 0)
-    #expect(simctl.bootDeviceCallCount == 0)
+    #expect(simctl.bootCallCount == 0)
     #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 0)
   }
 
@@ -296,7 +296,7 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in }
+    simctl.bootHandler = { _ in }
 
     // When: shouldConfirm is false (default behavior)
     try await command.run(shouldConfirm: false)
@@ -306,7 +306,7 @@ struct BootDeviceCommandTests {
 
     // Then: Boot process is executed directly
     #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
-    #expect(simctl.bootDeviceArgValues == [device.udid])
+    #expect(simctl.bootArgValues == [device.udid])
     #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
   }
 
@@ -333,7 +333,7 @@ struct BootDeviceCommandTests {
     let selectedDevice = DeviceOption(device2)
     deviceSelectionPrompt.selectDeviceHandler = { _ in selectedDevice }
 
-    simctl.bootDeviceHandler = { _ in }
+    simctl.bootHandler = { _ in }
 
     // When
     try await command.run()
@@ -353,9 +353,9 @@ struct BootDeviceCommandTests {
     #expect(deviceSelectionPrompt.selectRuntimeCallCount == 1)
     #expect(deviceSelectionPrompt.selectDeviceCallCount == 1)
     #expect(bootDeviceMessage.showBootingDeviceMessageCallCount == 1)
-    #expect(simctl.bootDeviceCallCount == 1)
+    #expect(simctl.bootCallCount == 1)
     #expect(bootDeviceMessage.showBootSuccessAlertCallCount == 1)
     // Then: Boot is called with selected device's UDID
-    #expect(simctl.bootDeviceArgValues == ["udid-2"])
+    #expect(simctl.bootArgValues == ["udid-2"])
   }
 }

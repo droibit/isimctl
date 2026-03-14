@@ -4,7 +4,7 @@ import SubprocessKit
 /// Protocol for executing `xcrun simctl` commands
 /// @mockable
 public protocol Simctlable: Sendable {
-  /// Executes `xcrun simctl list devices --json` and returns parsed ``SimulatorList``
+  /// Executes `xcrun simctl list devices [<search term>|available] --json` and returns parsed ``SimulatorList``
   ///
   /// The returned ``SimulatorList`` maps runtime identifiers to their associated devices.
   /// A runtime may be present in the result with an empty device array if no devices are
@@ -20,13 +20,13 @@ public protocol Simctlable: Sendable {
   /// - Parameter udid: The unique device identifier (must not be empty)
   /// - Throws: ``SimctlError`` if command execution fails or xcrun is not available
   /// - Precondition: `udid` must not be empty
-  func bootDevice(udid: String) async throws
+  func boot(udid: String) async throws
 
   /// Executes `xcrun simctl shutdown <udid>` or `xcrun simctl shutdown all` to shut down a device or all devices
   ///
   /// - Parameter target: The target to shut down: a specific device by UDID, or all running devices
   /// - Throws: ``SimctlError`` if command execution fails or xcrun is not available
-  func shutdownDevice(_ target: ShutdownTarget) async throws
+  func shutdown(_ target: ShutdownTarget) async throws
 }
 
 /// Public interface for executing simctl commands
@@ -64,7 +64,7 @@ public struct Simctl: Simctlable, Sendable {
     }
   }
 
-  public func bootDevice(udid: String) async throws {
+  public func boot(udid: String) async throws {
     precondition(!udid.isEmpty, "udid must not be empty")
 
     guard xcrun.isExecutableAvailable() else {
@@ -79,7 +79,7 @@ public struct Simctl: Simctlable, Sendable {
     }
   }
 
-  public func shutdownDevice(_ target: ShutdownTarget) async throws {
+  public func shutdown(_ target: ShutdownTarget) async throws {
     guard xcrun.isExecutableAvailable() else {
       throw SimctlError.xcrunNotFound
     }

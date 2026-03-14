@@ -156,30 +156,30 @@ struct SimctlTests {
     #expect(result.devices.isEmpty)
   }
 
-  // MARK: - bootDevice
+  // MARK: - boot
 
   @Test
-  func bootDevice_shouldCallXcrunWithCorrectArguments() async throws {
+  func boot_shouldCallXcrunWithCorrectArguments() async throws {
     // Given: Mock runner to return successfully
     xcrun.isExecutableAvailableHandler = { true }
     xcrun.executeHandler = { _ in }
 
     // When: Boot a device
-    try await simctl.bootDevice(udid: "test-udid-123")
+    try await simctl.boot(udid: "test-udid-123")
 
     // Then: Verify runner was called with correct arguments
     #expect(xcrun.executeArgValues == [["simctl", "boot", "test-udid-123"]])
   }
 
   @Test
-  func bootDevice_shouldThrowXcrunNotFoundWhenXcrunIsNotAvailable() async throws {
+  func boot_shouldThrowXcrunNotFoundWhenXcrunIsNotAvailable() async throws {
     // Given: xcrun is not available
     xcrun.isExecutableAvailableHandler = { false }
 
     // When/Then: Expect xcrunNotFound error
     let expectedError = SimctlError.xcrunNotFound
     await #expect(throws: expectedError) {
-      try await simctl.bootDevice(udid: "test-udid")
+      try await simctl.boot(udid: "test-udid")
     }
 
     // Then: Verify runner.execute was not called
@@ -187,7 +187,7 @@ struct SimctlTests {
   }
 
   @Test
-  func bootDevice_shouldThrowCommandFailedWhenXcrunThrowsError() async throws {
+  func boot_shouldThrowCommandFailedWhenXcrunThrowsError() async throws {
     // Given: runner throws an error (e.g., device already booted or invalid UUID)
     xcrun.isExecutableAvailableHandler = { true }
 
@@ -202,50 +202,50 @@ struct SimctlTests {
     // When/Then: Expect commandFailed error
     let expectedError = SimctlError.commandFailed(error: runError)
     await #expect(throws: expectedError) {
-      try await simctl.bootDevice(udid: "test-udid")
+      try await simctl.boot(udid: "test-udid")
     }
 
     // Then: Verify runner.execute was called once
     #expect(xcrun.executeCallCount == 1)
   }
 
-  // MARK: - shutdownDevice
+  // MARK: - shutdown
 
   @Test
-  func shutdownDevice_shouldCallXcrunWithCorrectArguments() async throws {
+  func shutdown_shouldCallXcrunWithCorrectArguments() async throws {
     // Given: Mock runner to return successfully
     xcrun.isExecutableAvailableHandler = { true }
     xcrun.executeHandler = { _ in }
 
     // When: Shut down a device
-    try await simctl.shutdownDevice(.device(udid: "test-udid-123"))
+    try await simctl.shutdown(.device(udid: "test-udid-123"))
 
     // Then: Verify runner was called with correct arguments
     #expect(xcrun.executeArgValues == [["simctl", "shutdown", "test-udid-123"]])
   }
 
   @Test
-  func shutdownDevice_shouldCallXcrunWithAllWhenPassingAll() async throws {
+  func shutdown_shouldCallXcrunWithAllWhenPassingAll() async throws {
     // Given: Mock runner to return successfully
     xcrun.isExecutableAvailableHandler = { true }
     xcrun.executeHandler = { _ in }
 
     // When: Shut down all devices
-    try await simctl.shutdownDevice(.all)
+    try await simctl.shutdown(.all)
 
     // Then: Verify runner was called with "all"
     #expect(xcrun.executeArgValues == [["simctl", "shutdown", "all"]])
   }
 
   @Test
-  func shutdownDevice_shouldThrowXcrunNotFoundWhenXcrunIsNotAvailable() async throws {
+  func shutdown_shouldThrowXcrunNotFoundWhenXcrunIsNotAvailable() async throws {
     // Given: xcrun is not available
     xcrun.isExecutableAvailableHandler = { false }
 
     // When/Then: Expect xcrunNotFound error
     let expectedError = SimctlError.xcrunNotFound
     await #expect(throws: expectedError) {
-      try await simctl.shutdownDevice(.device(udid: "test-udid"))
+      try await simctl.shutdown(.device(udid: "test-udid"))
     }
 
     // Then: Verify runner.execute was not called
@@ -253,7 +253,7 @@ struct SimctlTests {
   }
 
   @Test
-  func shutdownDevice_shouldThrowCommandFailedWhenXcrunThrowsError() async throws {
+  func shutdown_shouldThrowCommandFailedWhenXcrunThrowsError() async throws {
     // Given: runner throws an error (e.g., device already shut down or invalid UUID)
     xcrun.isExecutableAvailableHandler = { true }
 
@@ -268,7 +268,7 @@ struct SimctlTests {
     // When/Then: Expect commandFailed error
     let expectedError = SimctlError.commandFailed(error: runError)
     await #expect(throws: expectedError) {
-      try await simctl.shutdownDevice(.device(udid: "test-udid"))
+      try await simctl.shutdown(.device(udid: "test-udid"))
     }
 
     // Then: Verify runner.execute was called once
